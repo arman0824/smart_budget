@@ -60,15 +60,15 @@ struct SubscriptionFormView: View {
             Form {
                 Section {
                     TextField("Service name", text: $name)
-                        .textInputAutocapitalization(.words)
+                        .platformWordsAutocapitalization()
                     TextField("Merchant (optional)", text: $merchant)
-                        .textInputAutocapitalization(.words)
+                        .platformWordsAutocapitalization()
                     HStack {
                         Text(currencyCode)
                             .font(.headline)
                             .foregroundStyle(DesignSystem.Colors.secondaryText)
                         TextField("Price", text: $amountText)
-                            .keyboardType(.decimalPad)
+                            .platformDecimalKeyboard()
                             .multilineTextAlignment(.trailing)
                             .font(.title3.monospacedDigit().weight(.semibold))
                     }
@@ -117,8 +117,8 @@ struct SubscriptionFormView: View {
                         }
                     }
                     TextField("Website (optional)", text: $website)
-                        .keyboardType(.URL)
-                        .textInputAutocapitalization(.never)
+                        .platformURLKeyboard()
+                        .platformNoAutocapitalization()
                 }
 
                 Section {
@@ -147,7 +147,7 @@ struct SubscriptionFormView: View {
             .scrollContentBackground(.hidden)
             .background(DesignSystem.Colors.background)
             .navigationTitle(subscription == nil ? "Add subscription" : "Edit subscription")
-            .navigationBarTitleDisplayMode(.inline)
+            .platformInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

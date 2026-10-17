@@ -68,14 +68,14 @@ struct TransactionFormView: View {
                             .font(.headline)
                             .foregroundStyle(DesignSystem.Colors.secondaryText)
                         TextField("Amount", text: $amountText)
-                            .keyboardType(.decimalPad)
+                            .platformDecimalKeyboard()
                             .multilineTextAlignment(.trailing)
                             .font(.system(.title2, design: .rounded).monospacedDigit().weight(.semibold))
                             .accessibilityLabel("Amount")
                     }
 
                     TextField("Merchant or title", text: $merchant)
-                        .textInputAutocapitalization(.words)
+                        .platformWordsAutocapitalization()
                 } header: {
                     Text("What happened?")
                 } footer: {
@@ -107,7 +107,7 @@ struct TransactionFormView: View {
                     TextField("Notes (optional)", text: $note, axis: .vertical)
                         .lineLimit(2...5)
                     TextField("Payment method (optional)", text: $paymentMethod)
-                        .textInputAutocapitalization(.words)
+                        .platformWordsAutocapitalization()
                 }
 
                 if transaction != nil {
@@ -121,7 +121,7 @@ struct TransactionFormView: View {
             .scrollContentBackground(.hidden)
             .background(DesignSystem.Colors.background)
             .navigationTitle(transaction == nil ? (subscriptionToRecord == nil ? "Add transaction" : "Record charge") : "Edit transaction")
-            .navigationBarTitleDisplayMode(.inline)
+            .platformInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

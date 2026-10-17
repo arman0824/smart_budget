@@ -103,7 +103,7 @@ struct SettingsView: View {
             .scrollContentBackground(.hidden)
             .background(DesignSystem.Colors.background)
             .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
+            .platformInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
@@ -224,7 +224,7 @@ private struct AmountSettingRow: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(DesignSystem.Colors.secondaryText)
             TextField("0", text: $value)
-                .keyboardType(.decimalPad)
+                .platformDecimalKeyboard()
                 .multilineTextAlignment(.trailing)
                 .frame(minWidth: 100)
                 .font(.body.monospacedDigit())
@@ -240,6 +240,9 @@ private struct CategoryManagementView: View {
     @State private var categoryToEdit: BudgetCategory?
     @State private var showNewCategory = false
     @State private var message: String?
+#if os(macOS)
+    @State private var isEditing = false
+#endif
 
     private var visibleCategories: [BudgetCategory] {
         categories.filter { !$0.isArchived }.sorted {
@@ -251,20 +254,34 @@ private struct CategoryManagementView: View {
         List {
             Section {
                 ForEach(visibleCategories, id: \.id) { category in
-                    Button {
-                        categoryToEdit = category
-                    } label: {
-                        HStack(spacing: DesignSystem.Spacing.medium) {
-                            CategoryIconView(systemName: category.iconName, color: Color(hex: category.colorHex), size: DesignSystem.Size.iconSmall, accessibilityLabel: category.name)
-                            Text(category.name)
-                                .foregroundStyle(DesignSystem.Colors.primaryText)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(DesignSystem.Colors.secondaryText)
+                    HStack(spacing: DesignSystem.Spacing.small) {
+#if os(macOS)
+                        if isEditing {
+                            Button {
+                                delete(category)
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .foregroundStyle(DesignSystem.Colors.danger)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Delete \(category.name)")
                         }
+#endif
+                        Button {
+                            categoryToEdit = category
+                        } label: {
+                            HStack(spacing: DesignSystem.Spacing.medium) {
+                                CategoryIconView(systemName: category.iconName, color: Color(hex: category.colorHex), size: DesignSystem.Size.iconSmall, accessibilityLabel: category.name)
+                                Text(category.name)
+                                    .foregroundStyle(DesignSystem.Colors.primaryText)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(DesignSystem.Colors.secondaryText)
+                            }
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
                 .onMove(perform: move)
                 .onDelete(perform: delete)
@@ -276,7 +293,7 @@ private struct CategoryManagementView: View {
         }
         .navigationTitle("Categories")
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .platformTrailing) {
                 Button {
                     showNewCategory = true
                 } label: {
@@ -284,9 +301,19 @@ private struct CategoryManagementView: View {
                 }
                 .accessibilityLabel("Add category")
             }
-            ToolbarItem(placement: .topBarLeading) {
+#if os(iOS)
+            ToolbarItem(placement: .platformLeading) {
                 EditButton()
             }
+#elseif os(macOS)
+            ToolbarItem(placement: .platformLeading) {
+                Button(isEditing ? "Done" : "Edit") {
+                    withAnimation {
+                        isEditing.toggle()
+                    }
+                }
+            }
+#endif
         }
         .sheet(isPresented: $showNewCategory) {
             CategoryEditorView(category: nil)
@@ -318,6 +345,13 @@ private struct CategoryManagementView: View {
             }
         }
     }
+
+#if os(macOS)
+    private func delete(_ category: BudgetCategory) {
+        guard let index = visibleCategories.firstIndex(where: { $0.id == category.id }) else { return }
+        delete(at: IndexSet(integer: index))
+    }
+#endif
 }
 
 private struct CategoryEditorView: View {
@@ -345,7 +379,7 @@ private struct CategoryEditorView: View {
             Form {
                 Section("Category") {
                     TextField("Name", text: $name)
-                        .textInputAutocapitalization(.words)
+                        .platformWordsAutocapitalization()
                     Picker("Icon", selection: $iconName) {
                         ForEach(iconChoices, id: \.self) { icon in
                             Label(icon.replacingOccurrences(of: ".fill", with: ""), systemImage: icon).tag(icon)
@@ -377,7 +411,7 @@ private struct CategoryEditorView: View {
             .scrollContentBackground(.hidden)
             .background(DesignSystem.Colors.background)
             .navigationTitle(category == nil ? "New category" : "Edit category")
-            .navigationBarTitleDisplayMode(.inline)
+            .platformInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

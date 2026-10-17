@@ -89,9 +89,9 @@ struct OverviewView: View {
         }
         .background(DesignSystem.Colors.background.ignoresSafeArea())
         .navigationTitle("Your finances")
-        .navigationBarTitleDisplayMode(.large)
+        .platformLargeNavigationTitle()
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItem(placement: .platformLeading) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(greeting)
                         .font(.caption)
@@ -102,7 +102,7 @@ struct OverviewView: View {
                 }
                 .accessibilityElement(children: .combine)
             }
-            ToolbarItemGroup(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .platformTrailing) {
                 Button {
                     selectedTransaction = nil
                     showTransactionForm = true

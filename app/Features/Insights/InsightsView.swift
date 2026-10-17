@@ -54,7 +54,7 @@ struct InsightsView: View {
         }
         .background(DesignSystem.Colors.background.ignoresSafeArea())
         .navigationTitle("Insights")
-        .navigationBarTitleDisplayMode(.large)
+        .platformLargeNavigationTitle()
         .onAppear {
             selectedMonth = appStore.selectedMonth
         }
@@ -275,7 +275,7 @@ struct InsightsView: View {
     }
 
     private var spendingPoints: [SpendingPoint] {
-        guard let interval else { return [] }
+        guard interval != nil else { return [] }
         let grouped = Dictionary(grouping: rangeTransactions) { transaction in
             range == .year
                 ? appStore.calendar.dateInterval(of: .month, for: transaction.date)?.start ?? transaction.date

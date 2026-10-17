@@ -20,10 +20,10 @@ test:
 		done; \
 		grep -q 'IPHONEOS_DEPLOYMENT_TARGET = 27.0;' "$(PROJECT)/project.pbxproj" || { printf '%s\n' 'Expected iOS deployment target is missing.' >&2; exit 1; }; \
 		grep -q 'SWIFT_VERSION = 5.0;' "$(PROJECT)/project.pbxproj" || { printf '%s\n' 'Expected Swift language version is missing.' >&2; exit 1; }; \
-		grep -q 'SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";' "$(PROJECT)/project.pbxproj" || { printf '%s\n' 'The app target must remain iOS-only.' >&2; exit 1; }; \
+		grep -q 'SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";' "$(PROJECT)/project.pbxproj" || { printf '%s\n' 'The app target must support iOS and macOS.' >&2; exit 1; }; \
 		grep -q 'TARGETED_DEVICE_FAMILY = "1,2";' "$(PROJECT)/project.pbxproj" || { printf '%s\n' 'The app target must target iPhone and iPad.' >&2; exit 1; }; \
 		grep -q 'import SwiftData' app/Persistence/ModelContainerFactory.swift || { printf '%s\n' 'SwiftData persistence source is missing.' >&2; exit 1; }; \
-		printf '%s\n' 'Linux source validation passed; the iOS build was intentionally skipped.'; \
+		printf '%s\n' 'Linux source validation passed; Apple-platform builds were intentionally skipped.'; \
 		exit 0; \
 	fi; \
 	developer_dir="$${DEVELOPER_DIR:-$$(xcode-select -p 2>/dev/null || true)}"; \
@@ -39,4 +39,13 @@ test:
 		-destination 'generic/platform=iOS Simulator' \
 		-derivedDataPath "$(DERIVED_DATA_PATH)" \
 		CODE_SIGNING_ALLOWED=NO \
-		build-for-testing
+		build-for-testing; \
+	DEVELOPER_DIR="$$developer_dir" xcodebuild \
+		-project "$(PROJECT)" \
+		-scheme "$(SCHEME)" \
+		-configuration Debug \
+		-sdk macosx \
+		-destination 'platform=macOS' \
+		-derivedDataPath "$(DERIVED_DATA_PATH)-macOS" \
+		CODE_SIGNING_ALLOWED=NO \
+		test

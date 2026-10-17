@@ -41,9 +41,9 @@ struct SubscriptionDetailView: View {
         }
         .background(DesignSystem.Colors.background.ignoresSafeArea())
         .navigationTitle(subscription.name)
-        .navigationBarTitleDisplayMode(.inline)
+        .platformInlineNavigationTitle()
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .platformTrailing) {
                 Menu {
                     Button {
                         showEdit = true

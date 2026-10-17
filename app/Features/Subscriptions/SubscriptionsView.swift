@@ -96,10 +96,14 @@ struct SubscriptionsView: View {
         }
         .background(DesignSystem.Colors.background.ignoresSafeArea())
         .navigationTitle("Subscriptions")
-        .navigationBarTitleDisplayMode(.large)
+        .platformLargeNavigationTitle()
+#if os(iOS)
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search subscriptions")
+#elseif os(macOS)
+        .searchable(text: $searchText, prompt: "Search subscriptions")
+#endif
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .platformTrailing) {
                 Button {
                     selectedSubscription = nil
                     showForm = true

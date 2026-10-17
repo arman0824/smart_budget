@@ -67,7 +67,11 @@ struct OnboardingView: View {
                     setupPage.tag(1)
                     remindersPage.tag(2)
                 }
+#if os(iOS)
                 .tabViewStyle(.page(indexDisplayMode: .never))
+#elseif os(macOS)
+                .tabViewStyle(.automatic)
+#endif
 
                 Button {
                     advance()
@@ -283,8 +287,8 @@ private struct DecimalField: View {
                 .font(.headline)
             HStack {
                 TextField(prompt, text: $text)
-                    .keyboardType(.decimalPad)
-                    .textInputAutocapitalization(.never)
+                    .platformDecimalKeyboard()
+                    .platformNoAutocapitalization()
                     .font(.body.monospacedDigit())
                 if !text.isEmpty {
                     Button {

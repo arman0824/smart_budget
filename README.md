@@ -32,12 +32,11 @@ CSV, and persistence bootstrap behavior in the `appTests` XCTest target.
 - macOS with **Xcode 27.0 or a compatible newer Xcode**. The project records
   `CreatedOnToolsVersion = 26.3`, `LastUpgradeCheck = 2700`, and
   `SWIFT_VERSION = 5.0`.
-- The primary build path is `iphoneos`/`iphonesimulator` with an
-  `IPHONEOS_DEPLOYMENT_TARGET` of **iOS 27.0**. The app target is explicitly
-  limited to iPhone and iPad so Xcode does not compile the iOS-only SwiftUI
-  views as a macOS app.
-- Xcode is required to build or run the iOS app. Linux cannot build SwiftUI,
-  SwiftData, or the iOS application SDK.
+- The app supports iOS/iPadOS and native macOS. The iOS deployment target is
+  **iOS 27.0** and the macOS deployment target is **macOS 27.0**. Platform-only
+  SwiftUI controls use conditional implementations where needed.
+- Xcode is required to build or run the Apple-platform app. Linux cannot build
+  SwiftUI, SwiftData, or the Apple application SDKs.
 
 ## Setup and run
 
@@ -49,14 +48,14 @@ CSV, and persistence bootstrap behavior in the `appTests` XCTest target.
    DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -version
    ```
 
-3. Open the project, select the `app` scheme and an iOS Simulator or device,
-   then press **Run**:
+3. Open the project, select the `app` scheme and choose an iOS Simulator,
+   iOS device, or **My Mac**, then press **Run**:
 
    ```sh
    open app.xcodeproj
    ```
 
-For a command-line compile smoke check, use the same developer directory:
+For a command-line compile smoke check for iOS, use the same developer directory:
 
 ```sh
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
@@ -65,11 +64,21 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   CODE_SIGNING_ALLOWED=NO build-for-testing
 ```
 
+For a native macOS build:
+
+```sh
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+  xcodebuild -project app.xcodeproj -scheme app -configuration Debug \
+  -sdk macosx -destination 'platform=macOS' \
+  CODE_SIGNING_ALLOWED=NO build
+```
+
 ## Checks
 
-`make test` compiles the app and XCTest bundle for a generic iOS Simulator
-without code signing. This offline build-for-testing check is the repository's
-single reproducible test command and does not need a booted simulator.
+`make test` compiles the app and XCTest bundle for a generic iOS Simulator and
+runs the XCTest bundle on the native macOS target, without code signing. This
+offline check is the repository's single reproducible test command; it does
+not need a booted iOS Simulator.
 
 ```sh
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer make test
@@ -79,9 +88,10 @@ Without a full Xcode developer directory, `make test` exits nonzero with a
 message explaining how to select one. To execute the XCTest methods rather
 than only compile them, run the `app` scheme's Test action in Xcode with an
 available iOS 27 simulator or device. This checkout has no simulator devices
-registered, so automated execution is not claimed here. Docker runs the same
-target in its explicit Linux source-validation mode; it validates repository
-structure and key project settings, but deliberately skips the iOS build:
+registered, so automated iOS test execution is not claimed here. Docker runs
+the same target in its explicit Linux source-validation mode; it validates
+repository structure and key project settings, but deliberately skips Apple
+platform builds:
 
 ```sh
 docker build --tag smart-budget-source-check .

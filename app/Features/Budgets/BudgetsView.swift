@@ -50,9 +50,9 @@ struct BudgetsView: View {
         }
         .background(DesignSystem.Colors.background.ignoresSafeArea())
         .navigationTitle("Budgets")
-        .navigationBarTitleDisplayMode(.large)
+        .platformLargeNavigationTitle()
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .platformTrailing) {
                 Menu {
                     Button {
                         showPlanEditor = true
@@ -254,7 +254,7 @@ private struct MonthlyPlanEditorView: View {
             .scrollContentBackground(.hidden)
             .background(DesignSystem.Colors.background)
             .navigationTitle("Monthly plan")
-            .navigationBarTitleDisplayMode(.inline)
+            .platformInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -336,7 +336,7 @@ private struct CategoryBudgetEditorView: View {
             .scrollContentBackground(.hidden)
             .background(DesignSystem.Colors.background)
             .navigationTitle("Category limit")
-            .navigationBarTitleDisplayMode(.inline)
+            .platformInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -403,7 +403,7 @@ private struct CategoryBudgetPickerView: View {
                 }
             }
             .navigationTitle("Choose category")
-            .navigationBarTitleDisplayMode(.inline)
+            .platformInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
@@ -427,7 +427,7 @@ private struct AmountInputRow: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(DesignSystem.Colors.secondaryText)
             TextField(optional ? "Optional" : "0", text: $text)
-                .keyboardType(.decimalPad)
+                .platformDecimalKeyboard()
                 .multilineTextAlignment(.trailing)
                 .frame(minWidth: 110)
                 .font(.body.monospacedDigit())

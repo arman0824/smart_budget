@@ -1,5 +1,79 @@
 import SwiftUI
 
+extension View {
+    @ViewBuilder
+    func platformDecimalKeyboard() -> some View {
+#if os(iOS)
+        self.keyboardType(.decimalPad)
+#else
+        self
+#endif
+    }
+
+    @ViewBuilder
+    func platformURLKeyboard() -> some View {
+#if os(iOS)
+        self.keyboardType(.URL)
+#else
+        self
+#endif
+    }
+
+    @ViewBuilder
+    func platformWordsAutocapitalization() -> some View {
+#if os(iOS)
+        self.textInputAutocapitalization(.words)
+#else
+        self
+#endif
+    }
+
+    @ViewBuilder
+    func platformNoAutocapitalization() -> some View {
+#if os(iOS)
+        self.textInputAutocapitalization(.never)
+#else
+        self
+#endif
+    }
+
+    @ViewBuilder
+    func platformLargeNavigationTitle() -> some View {
+#if os(iOS)
+        self.navigationBarTitleDisplayMode(.large)
+#else
+        self
+#endif
+    }
+
+    @ViewBuilder
+    func platformInlineNavigationTitle() -> some View {
+#if os(iOS)
+        self.navigationBarTitleDisplayMode(.inline)
+#else
+        self
+#endif
+    }
+}
+
+extension ToolbarItemPlacement {
+    static var platformLeading: ToolbarItemPlacement {
+#if os(iOS)
+        .topBarLeading
+#else
+        .automatic
+#endif
+    }
+
+    static var platformTrailing: ToolbarItemPlacement {
+#if os(iOS)
+        .topBarTrailing
+#else
+        .automatic
+#endif
+    }
+}
+
 struct MoneyText: View {
     private let amount: Decimal
     private let currencyCode: String

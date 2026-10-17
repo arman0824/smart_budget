@@ -81,10 +81,14 @@ struct ActivityView: View {
         }
         .background(DesignSystem.Colors.background.ignoresSafeArea())
         .navigationTitle("Activity")
-        .navigationBarTitleDisplayMode(.large)
+        .platformLargeNavigationTitle()
+#if os(iOS)
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search transactions")
+#elseif os(macOS)
+        .searchable(text: $searchText, prompt: "Search transactions")
+#endif
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .platformTrailing) {
                 Button {
                     selectedTransaction = nil
                     showTransactionForm = true
@@ -289,7 +293,7 @@ private struct CategoryFilterSheet: View {
                 }
             }
             .navigationTitle("Filter category")
-            .navigationBarTitleDisplayMode(.inline)
+            .platformInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
