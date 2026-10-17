@@ -22,6 +22,8 @@ five-tab finance experience.
 
 There is no backend, network service, analytics SDK, or third-party package.
 The persistence layer is local-first: data remains on the device in SwiftData.
+The Swift Package Manager resolution file is intentionally empty because the
+project has no external package dependencies.
 `Tests/FinancialCalculatorTests.swift` covers core money, budget, billing-date,
 CSV, and persistence bootstrap behavior in the `appTests` XCTest target.
 
