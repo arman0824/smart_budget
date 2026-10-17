@@ -17,11 +17,29 @@ struct MyApp: App {
     }
 
     var body: some Scene {
+#if os(macOS)
         WindowGroup {
             ContentView()
                 .environmentObject(appStore)
                 .environment(\.locale, Locale(identifier: appStore.preferences?.localeIdentifier ?? "en_IN"))
         }
         .modelContainer(modelContainer)
+        .defaultSize(width: 1200, height: 820)
+
+        Settings {
+            SettingsView()
+                .environmentObject(appStore)
+                .environment(\.locale, Locale(identifier: appStore.preferences?.localeIdentifier ?? "en_IN"))
+                .modelContainer(modelContainer)
+                .platformSettingsFrame()
+        }
+#else
+        WindowGroup {
+            ContentView()
+                .environmentObject(appStore)
+                .environment(\.locale, Locale(identifier: appStore.preferences?.localeIdentifier ?? "en_IN"))
+        }
+        .modelContainer(modelContainer)
+#endif
     }
 }

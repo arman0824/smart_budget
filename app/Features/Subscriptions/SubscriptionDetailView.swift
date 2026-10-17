@@ -87,8 +87,19 @@ struct SubscriptionDetailView: View {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxxSmall) {
                 Text(subscription.merchant.isEmpty ? subscription.name : subscription.merchant)
                     .font(.title2.weight(.semibold))
+#if os(macOS)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+#endif
                 StatusPill(title: subscription.status.displayName, color: statusColor, background: statusColor.opacity(0.12))
+#if os(macOS)
+                    .fixedSize(horizontal: true, vertical: false)
+#endif
             }
+#if os(macOS)
+            .frame(minWidth: 0, alignment: .leading)
+            .layoutPriority(1)
+#endif
             Spacer()
         }
     }
@@ -102,14 +113,29 @@ struct SubscriptionDetailView: View {
                             .font(.subheadline)
                             .foregroundStyle(DesignSystem.Colors.secondaryText)
                         MoneyText(subscription.monthlyEquivalent, currencyCode: subscription.currencyCode, font: .system(size: 30, design: .rounded).monospacedDigit().weight(.semibold))
+#if os(macOS)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+#endif
                     }
+#if os(macOS)
+                    .layoutPriority(1)
+#endif
                     Spacer()
                     VStack(alignment: .trailing, spacing: DesignSystem.Spacing.xxxSmall) {
                         Text("Annualized")
                             .font(.caption)
                             .foregroundStyle(DesignSystem.Colors.secondaryText)
                         MoneyText(subscription.annualEquivalent, currencyCode: subscription.currencyCode, font: .subheadline.monospacedDigit().weight(.semibold))
+#if os(macOS)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+#endif
                     }
+#if os(macOS)
+                    .frame(minWidth: 96, alignment: .trailing)
+                    .layoutPriority(2)
+#endif
                 }
                 Divider().overlay(DesignSystem.Colors.divider)
                 HStack {
@@ -117,10 +143,25 @@ struct SubscriptionDetailView: View {
                         .font(.subheadline)
                         .foregroundStyle(DesignSystem.Colors.secondaryText)
                     Spacer()
+#if os(macOS)
+                    HStack(spacing: DesignSystem.Spacing.xxSmall) {
+                        MoneyText(subscription.amount, currencyCode: subscription.currencyCode, font: .subheadline.monospacedDigit().weight(.semibold))
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                        Text("/ \(subscription.billingCycle.displayName.lowercased())")
+                            .font(.caption)
+                            .foregroundStyle(DesignSystem.Colors.secondaryText)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                    }
+                    .frame(minWidth: 128, alignment: .trailing)
+                    .layoutPriority(2)
+#else
                     MoneyText(subscription.amount, currencyCode: subscription.currencyCode, font: .subheadline.monospacedDigit().weight(.semibold))
                     Text("/ \(subscription.billingCycle.displayName.lowercased())")
                         .font(.caption)
                         .foregroundStyle(DesignSystem.Colors.secondaryText)
+#endif
                 }
             }
         }
@@ -193,11 +234,20 @@ private struct DetailLine: View {
             Text(title)
                 .font(.subheadline)
                 .foregroundStyle(DesignSystem.Colors.secondaryText)
+#if os(macOS)
+                .layoutPriority(1)
+#endif
             Spacer(minLength: DesignSystem.Spacing.medium)
             Text(value)
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(DesignSystem.Colors.primaryText)
                 .multilineTextAlignment(.trailing)
+#if os(macOS)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minWidth: 140, alignment: .trailing)
+                .layoutPriority(2)
+#endif
         }
     }
 }

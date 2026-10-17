@@ -55,6 +55,19 @@ struct SubscriptionFormView: View {
         return nextBillingDate >= earliestDate
     }
 
+    private var amountField: some View {
+        HStack(spacing: DesignSystem.Spacing.small) {
+            Text(currencyCode)
+                .font(.headline)
+                .foregroundStyle(DesignSystem.Colors.secondaryText)
+            TextField("0", text: $amountText)
+                .platformDecimalKeyboard()
+                .multilineTextAlignment(.trailing)
+                .font(.title3.monospacedDigit().weight(.semibold))
+                .frame(minWidth: 180)
+        }
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -63,15 +76,13 @@ struct SubscriptionFormView: View {
                         .platformWordsAutocapitalization()
                     TextField("Merchant (optional)", text: $merchant)
                         .platformWordsAutocapitalization()
-                    HStack {
-                        Text(currencyCode)
-                            .font(.headline)
-                            .foregroundStyle(DesignSystem.Colors.secondaryText)
-                        TextField("Price", text: $amountText)
-                            .platformDecimalKeyboard()
-                            .multilineTextAlignment(.trailing)
-                            .font(.title3.monospacedDigit().weight(.semibold))
+#if os(macOS)
+                    LabeledContent("Price") {
+                        amountField
                     }
+#else
+                    amountField
+#endif
                     Picker("Billing currency", selection: $currencyCode) {
                         ForEach(currencies, id: \.self) { code in
                             Text(code).tag(code)
@@ -116,6 +127,12 @@ struct SubscriptionFormView: View {
                                 .tag(Optional(category.id))
                         }
                     }
+                    if visibleCategories.isEmpty {
+                        Text("No active categories yet. You can add one from Settings.")
+                            .font(.footnote)
+                            .foregroundStyle(DesignSystem.Colors.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     TextField("Website (optional)", text: $website)
                         .platformURLKeyboard()
                         .platformNoAutocapitalization()
@@ -130,10 +147,11 @@ struct SubscriptionFormView: View {
                     }
                     TextField("Renewal notes (optional)", text: $notes, axis: .vertical)
                         .lineLimit(2...5)
+                        .platformMultilineField(minHeight: 80)
                 } header: {
                     Text("Reminder")
                 } footer: {
-                    Text("A reminder is scheduled only for active or trial subscriptions with a future billing date. iOS notification permission is required.")
+                    Text("A reminder is scheduled only for active or trial subscriptions with a future billing date. Notification permission is required.")
                 }
 
                 if subscription != nil {
@@ -146,6 +164,7 @@ struct SubscriptionFormView: View {
             }
             .scrollContentBackground(.hidden)
             .background(DesignSystem.Colors.background)
+            .platformFormLayout()
             .navigationTitle(subscription == nil ? "Add subscription" : "Edit subscription")
             .platformInlineNavigationTitle()
             .toolbar {
@@ -173,8 +192,11 @@ struct SubscriptionFormView: View {
                 Button("Cancel", role: .cancel) { }
             }
         }
+        .platformSheetFrame(minWidth: 700, idealWidth: 780, minHeight: 680, idealHeight: 820)
+#if os(iOS)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+#endif
     }
 
     private func save() {

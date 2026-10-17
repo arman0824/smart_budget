@@ -27,6 +27,22 @@ struct SettingsView: View {
         ("JPY", "Japanese yen")
     ]
 
+    private var notificationFooter: String {
+#if os(macOS)
+        "Reminders are local to this Mac. macOS may still delay notifications because of Focus, power, or system settings."
+#else
+        "Reminders are local to this device. iOS may still delay notifications because of Focus, power, or system settings."
+#endif
+    }
+
+    private var supportedPlatformText: String {
+#if os(macOS)
+        "iOS 27 and macOS 27"
+#else
+        "iOS 27 and later"
+#endif
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -62,7 +78,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Notifications")
                 } footer: {
-                    Text("Reminders are local to this device. iOS may still delay notifications because of Focus, power, or system settings.")
+                    Text(notificationFooter)
                 }
 
                 Section("Data") {
@@ -97,17 +113,20 @@ struct SettingsView: View {
                 Section("About") {
                     LabeledContent("Version", value: appVersion)
                     LabeledContent("Storage", value: "On-device SwiftData")
-                    LabeledContent("Supported", value: "iOS 27 and later")
+                    LabeledContent("Supported", value: supportedPlatformText)
                 }
             }
             .scrollContentBackground(.hidden)
             .background(DesignSystem.Colors.background)
+            .platformFormLayout()
             .navigationTitle("Settings")
             .platformInlineNavigationTitle()
             .toolbar {
+#if os(iOS)
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
                 }
+#endif
             }
             .fileExporter(
                 isPresented: $showExporter,
@@ -133,6 +152,7 @@ struct SettingsView: View {
                 Text(message ?? "")
             }
         }
+        .platformSettingsFrame()
         .onAppear {
             selectedCurrency = appStore.preferences?.currencyCode ?? "INR"
             notificationsEnabled = appStore.preferences?.notificationsEnabled ?? false
@@ -185,6 +205,7 @@ private struct MonthlyPlanSettingsView: View {
         }
         .scrollContentBackground(.hidden)
         .background(DesignSystem.Colors.background)
+        .platformFormLayout()
         .navigationTitle("Monthly plan")
         .onAppear {
             allowance = stringValue(appStore.preferences?.monthlySpendingAllowance ?? .zero)
@@ -216,19 +237,31 @@ private struct AmountSettingRow: View {
     @Binding var value: String
     let currencyCode: String
 
-    var body: some View {
-        HStack {
-            Text(title)
-            Spacer()
+    private var amountField: some View {
+        HStack(spacing: DesignSystem.Spacing.small) {
             Text(currencyCode)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(DesignSystem.Colors.secondaryText)
             TextField("0", text: $value)
                 .platformDecimalKeyboard()
                 .multilineTextAlignment(.trailing)
-                .frame(minWidth: 100)
+                .frame(minWidth: 180)
                 .font(.body.monospacedDigit())
         }
+    }
+
+    var body: some View {
+#if os(macOS)
+        LabeledContent(title) {
+            amountField
+        }
+#else
+        HStack {
+            Text(title)
+            Spacer()
+            amountField
+        }
+#endif
     }
 }
 
@@ -250,45 +283,89 @@ private struct CategoryManagementView: View {
         }
     }
 
+    private var archivedCategories: [BudgetCategory] {
+        categories.filter(\.isArchived).sorted {
+            $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+        }
+    }
+
     var body: some View {
         List {
             Section {
-                ForEach(visibleCategories, id: \.id) { category in
-                    HStack(spacing: DesignSystem.Spacing.small) {
+                if visibleCategories.isEmpty {
+                    Text("No active categories. Add a category or restore one below.")
+                        .font(.subheadline)
+                        .foregroundStyle(DesignSystem.Colors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    ForEach(visibleCategories, id: \.id) { category in
+                        HStack(spacing: DesignSystem.Spacing.small) {
 #if os(macOS)
-                        if isEditing {
+                            if isEditing {
+                                Button {
+                                    delete(category)
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                        .foregroundStyle(DesignSystem.Colors.danger)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Delete \(category.name)")
+                            }
+#endif
                             Button {
-                                delete(category)
+                                categoryToEdit = category
                             } label: {
-                                Image(systemName: "minus.circle.fill")
-                                    .foregroundStyle(DesignSystem.Colors.danger)
+                                HStack(spacing: DesignSystem.Spacing.medium) {
+                                    CategoryIconView(systemName: category.iconName, color: Color(hex: category.colorHex), size: DesignSystem.Size.iconSmall, accessibilityLabel: category.name)
+                                    Text(category.name)
+                                        .foregroundStyle(DesignSystem.Colors.primaryText)
+                                        .lineLimit(2)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(DesignSystem.Colors.secondaryText)
+                                }
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel("Delete \(category.name)")
                         }
-#endif
-                        Button {
-                            categoryToEdit = category
-                        } label: {
-                            HStack(spacing: DesignSystem.Spacing.medium) {
-                                CategoryIconView(systemName: category.iconName, color: Color(hex: category.colorHex), size: DesignSystem.Size.iconSmall, accessibilityLabel: category.name)
-                                Text(category.name)
-                                    .foregroundStyle(DesignSystem.Colors.primaryText)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(DesignSystem.Colors.secondaryText)
-                            }
-                        }
-                        .buttonStyle(.plain)
                     }
+                    .onMove(perform: move)
+                    .onDelete(perform: delete)
                 }
-                .onMove(perform: move)
-                .onDelete(perform: delete)
             } header: {
                 Text("Expense categories")
             } footer: {
                 Text("Categories with transactions are archived instead of deleted so your history remains understandable.")
+            }
+
+            if !archivedCategories.isEmpty {
+                Section {
+                    ForEach(archivedCategories, id: \.id) { category in
+                        HStack(spacing: DesignSystem.Spacing.small) {
+                            CategoryIconView(
+                                systemName: category.iconName,
+                                color: DesignSystem.Colors.secondaryText,
+                                backgroundColor: DesignSystem.Colors.divider,
+                                size: DesignSystem.Size.iconSmall,
+                                accessibilityLabel: category.name
+                            )
+                            Text(category.name)
+                                .foregroundStyle(DesignSystem.Colors.secondaryText)
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer()
+                            Button("Restore") {
+                                appStore.restoreCategory(category)
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+                } header: {
+                    Text("Archived categories")
+                } footer: {
+                    Text("Restoring a category makes it available in transactions, budgets, and subscriptions again.")
+                }
             }
         }
         .navigationTitle("Categories")
@@ -410,6 +487,7 @@ private struct CategoryEditorView: View {
             }
             .scrollContentBackground(.hidden)
             .background(DesignSystem.Colors.background)
+            .platformFormLayout()
             .navigationTitle(category == nil ? "New category" : "Edit category")
             .platformInlineNavigationTitle()
             .toolbar {
@@ -423,8 +501,11 @@ private struct CategoryEditorView: View {
                 }
             }
         }
+        .platformSheetFrame(minWidth: 560, idealWidth: 640, minHeight: 440, idealHeight: 560)
+#if os(iOS)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+#endif
     }
 
     private func save() {

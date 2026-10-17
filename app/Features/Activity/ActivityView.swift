@@ -150,21 +150,24 @@ struct ActivityView: View {
             }
             .pickerStyle(.segmented)
 
-            HStack(spacing: DesignSystem.Spacing.small) {
-                FilterChip(title: categoryFilterTitle, isSelected: categoryFilter != nil, systemImage: "line.3.horizontal.decrease") {
-                    showFilters = true
-                }
-                FilterChip(title: sortOrder.title, systemImage: "arrow.up.arrow.down") {
-                    sortOrder = sortOrder == .date ? .amount : .date
-                }
-                if categoryFilter != nil || !searchText.isEmpty {
-                    Button("Clear") {
-                        categoryFilter = nil
-                        searchText = ""
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DesignSystem.Spacing.small) {
+                    FilterChip(title: categoryFilterTitle, isSelected: categoryFilter != nil, systemImage: "line.3.horizontal.decrease") {
+                        showFilters = true
                     }
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(DesignSystem.Colors.success)
+                    FilterChip(title: sortOrder.title, systemImage: "arrow.up.arrow.down") {
+                        sortOrder = sortOrder == .date ? .amount : .date
+                    }
+                    if categoryFilter != nil || !searchText.isEmpty {
+                        Button("Clear") {
+                            categoryFilter = nil
+                            searchText = ""
+                        }
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(DesignSystem.Colors.success)
+                    }
                 }
+                .padding(.vertical, DesignSystem.Spacing.xxxSmall)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .sheet(isPresented: $showFilters) {
@@ -172,7 +175,6 @@ struct ActivityView: View {
                     categories: visibleCategories,
                     selection: $categoryFilter
                 )
-                .presentationDetents([.medium, .large])
             }
         }
     }
@@ -300,5 +302,10 @@ private struct CategoryFilterSheet: View {
                 }
             }
         }
+        .platformSheetFrame(minWidth: 460, idealWidth: 560, minHeight: 360, idealHeight: 440)
+#if os(iOS)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+#endif
     }
 }

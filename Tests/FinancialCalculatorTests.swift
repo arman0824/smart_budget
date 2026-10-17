@@ -109,4 +109,20 @@ final class FinancialCalculatorTests: XCTestCase {
         XCTAssertFalse(categories.isEmpty)
         XCTAssertTrue(transactions.isEmpty)
     }
+
+    func testArchivedCategoryCanBeRestoredForNewEntries() throws {
+        let container = try ModelContainerFactory.makeContainer(inMemory: true)
+        let store = AppStore(modelContext: container.mainContext, calendar: calendar)
+        guard let category = store.categories.first else {
+            return XCTFail("Expected seeded categories")
+        }
+
+        category.isArchived = true
+        XCTAssertFalse(store.categories.contains(where: { $0.id == category.id }))
+
+        store.restoreCategory(category)
+
+        XCTAssertFalse(category.isArchived)
+        XCTAssertTrue(store.categories.contains(where: { $0.id == category.id }))
+    }
 }

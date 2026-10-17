@@ -236,7 +236,7 @@ struct OnboardingView: View {
                             let granted = await appStore.requestNotificationPermission()
                             if !granted {
                                 notificationsEnabled = false
-                                notificationMessage = "Notifications are off. You can enable them later in iOS Settings."
+                                notificationMessage = "Notifications are off. You can enable them later in Settings."
                             }
                         }
                     }

@@ -73,12 +73,26 @@ struct TransactionRow: View {
                 Text(transaction.merchant.isEmpty ? transaction.kind.displayName : transaction.merchant)
                     .font(.body.weight(.medium))
                     .foregroundStyle(DesignSystem.Colors.primaryText)
+#if os(macOS)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+#else
                     .lineLimit(1)
+#endif
                 Text(category?.name ?? transaction.kind.displayName)
                     .font(.caption)
                     .foregroundStyle(DesignSystem.Colors.secondaryText)
+#if os(macOS)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+#else
                     .lineLimit(1)
+#endif
             }
+#if os(macOS)
+            .frame(minWidth: 0, alignment: .leading)
+            .layoutPriority(1)
+#endif
 
             Spacer(minLength: DesignSystem.Spacing.small)
 
@@ -89,10 +103,22 @@ struct TransactionRow: View {
                     font: .body.monospacedDigit().weight(.semibold),
                     color: amountColor
                 )
+#if os(macOS)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+#endif
                 Text(transaction.date, format: .dateTime.day().month(.abbreviated))
                     .font(.caption)
                     .foregroundStyle(DesignSystem.Colors.secondaryText)
+#if os(macOS)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+#endif
             }
+#if os(macOS)
+            .frame(minWidth: 96, alignment: .trailing)
+            .layoutPriority(2)
+#endif
         }
         .padding(.vertical, DesignSystem.Spacing.small)
         .accessibilityElement(children: .combine)
@@ -141,26 +167,55 @@ struct UpcomingPaymentRow: View {
                 Text(subscription.name)
                     .font(.body.weight(.medium))
                     .foregroundStyle(DesignSystem.Colors.primaryText)
+#if os(macOS)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+#else
                     .lineLimit(1)
+#endif
                 if let nextBillingDate = subscription.nextBillingDate {
                     Text(nextBillingDate, format: .dateTime.day().month(.abbreviated).year())
                         .font(.caption)
                         .foregroundStyle(DesignSystem.Colors.secondaryText)
+#if os(macOS)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+#endif
                 } else {
                     Text("No renewal date")
                         .font(.caption)
                         .foregroundStyle(DesignSystem.Colors.secondaryText)
+#if os(macOS)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+#endif
                 }
             }
+#if os(macOS)
+            .frame(minWidth: 0, alignment: .leading)
+            .layoutPriority(1)
+#endif
 
             Spacer(minLength: DesignSystem.Spacing.small)
 
             VStack(alignment: .trailing, spacing: DesignSystem.Spacing.xxxSmall) {
                 MoneyText(subscription.amount, currencyCode: currencyCode, font: .body.monospacedDigit().weight(.semibold))
+#if os(macOS)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+#endif
                 Text(subscription.billingCycle.displayName)
                     .font(.caption)
                     .foregroundStyle(DesignSystem.Colors.secondaryText)
+#if os(macOS)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+#endif
             }
+#if os(macOS)
+            .frame(minWidth: 96, alignment: .trailing)
+            .layoutPriority(2)
+#endif
         }
         .padding(.vertical, DesignSystem.Spacing.small)
         .accessibilityElement(children: .combine)
@@ -208,17 +263,37 @@ struct CategoryBudgetRow: View {
                         Text(category.name)
                             .font(.body.weight(.medium))
                             .foregroundStyle(DesignSystem.Colors.primaryText)
+#if os(macOS)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+#endif
                         Text(limit > .zero ? "\(percentage.formatted(.percent.precision(.fractionLength(0)))) used" : "No limit set")
                             .font(.caption)
                             .foregroundStyle(DesignSystem.Colors.secondaryText)
                     }
+#if os(macOS)
+                    .frame(minWidth: 0, alignment: .leading)
+                    .layoutPriority(1)
+#endif
                     Spacer()
                     VStack(alignment: .trailing, spacing: DesignSystem.Spacing.xxxSmall) {
                         MoneyText(spent, currencyCode: currencyCode, font: .subheadline.monospacedDigit().weight(.semibold))
+#if os(macOS)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+#endif
                         if limit > .zero {
                             MoneyText(limit, currencyCode: currencyCode, font: .caption, color: DesignSystem.Colors.secondaryText)
+#if os(macOS)
+                                .lineLimit(1)
+                                .fixedSize(horizontal: true, vertical: false)
+#endif
                         }
                     }
+#if os(macOS)
+                    .frame(minWidth: 96, alignment: .trailing)
+                    .layoutPriority(2)
+#endif
                 }
 
                 BudgetProgressBar(

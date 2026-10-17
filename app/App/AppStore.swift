@@ -188,6 +188,13 @@ final class AppStore: ObservableObject {
         return true
     }
 
+    func restoreCategory(_ category: BudgetCategory) {
+        guard category.isArchived else { return }
+        category.isArchived = false
+        category.sortOrder = (categories.map(\.sortOrder).max() ?? -1) + 1
+        _ = save()
+    }
+
     func scheduleReminder(for subscription: Subscription) {
         let currentPreferences = preferences
         Task { @MainActor [weak self] in

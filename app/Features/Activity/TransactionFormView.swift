@@ -52,6 +52,20 @@ struct TransactionFormView: View {
         parsedAmount > .zero && !trimmedMerchant.isEmpty
     }
 
+    private var amountField: some View {
+        HStack(spacing: DesignSystem.Spacing.small) {
+            Text(appStore.preferences?.currencyCode ?? "INR")
+                .font(.headline)
+                .foregroundStyle(DesignSystem.Colors.secondaryText)
+            TextField("0", text: $amountText)
+                .platformDecimalKeyboard()
+                .multilineTextAlignment(.trailing)
+                .font(.system(.title2, design: .rounded).monospacedDigit().weight(.semibold))
+                .frame(minWidth: 180)
+                .accessibilityLabel("Amount")
+        }
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -63,16 +77,13 @@ struct TransactionFormView: View {
                     }
                     .pickerStyle(.segmented)
 
-                    HStack {
-                        Text(appStore.preferences?.currencyCode ?? "INR")
-                            .font(.headline)
-                            .foregroundStyle(DesignSystem.Colors.secondaryText)
-                        TextField("Amount", text: $amountText)
-                            .platformDecimalKeyboard()
-                            .multilineTextAlignment(.trailing)
-                            .font(.system(.title2, design: .rounded).monospacedDigit().weight(.semibold))
-                            .accessibilityLabel("Amount")
+#if os(macOS)
+                    LabeledContent("Amount") {
+                        amountField
                     }
+#else
+                    amountField
+#endif
 
                     TextField("Merchant or title", text: $merchant)
                         .platformWordsAutocapitalization()
@@ -96,6 +107,12 @@ struct TransactionFormView: View {
                                     .tag(Optional(category.id))
                             }
                         }
+                        if visibleCategories.isEmpty {
+                            Text("No active categories yet. You can add one from Settings.")
+                                .font(.footnote)
+                                .foregroundStyle(DesignSystem.Colors.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                 }
 
@@ -106,6 +123,7 @@ struct TransactionFormView: View {
                 Section("Details") {
                     TextField("Notes (optional)", text: $note, axis: .vertical)
                         .lineLimit(2...5)
+                        .platformMultilineField(minHeight: 80)
                     TextField("Payment method (optional)", text: $paymentMethod)
                         .platformWordsAutocapitalization()
                 }
@@ -120,6 +138,7 @@ struct TransactionFormView: View {
             }
             .scrollContentBackground(.hidden)
             .background(DesignSystem.Colors.background)
+            .platformFormLayout()
             .navigationTitle(transaction == nil ? (subscriptionToRecord == nil ? "Add transaction" : "Record charge") : "Edit transaction")
             .platformInlineNavigationTitle()
             .toolbar {
@@ -147,8 +166,11 @@ struct TransactionFormView: View {
                 Button("Cancel", role: .cancel) { }
             }
         }
+        .platformSheetFrame(minWidth: 680, idealWidth: 760, minHeight: 620, idealHeight: 760)
+#if os(iOS)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+#endif
     }
 
     private func save() {

@@ -75,13 +75,11 @@ struct BudgetsView: View {
         }
         .sheet(isPresented: $showCategoryPicker) {
             CategoryBudgetPickerView(
-                categories: visibleCategories,
                 categoriesWithPlans: Set(monthPlans.map(\.categoryID))
             ) { category in
                 selectedCategory = category
                 showCategoryPicker = false
             }
-            .presentationDetents([.medium, .large])
         }
         .sheet(item: $selectedCategory) { category in
             CategoryBudgetEditorView(category: category, month: selectedMonth, existingPlan: plan(for: category))
@@ -253,6 +251,7 @@ private struct MonthlyPlanEditorView: View {
             }
             .scrollContentBackground(.hidden)
             .background(DesignSystem.Colors.background)
+            .platformFormLayout()
             .navigationTitle("Monthly plan")
             .platformInlineNavigationTitle()
             .toolbar {
@@ -267,8 +266,11 @@ private struct MonthlyPlanEditorView: View {
                 }
             }
         }
+        .platformSheetFrame(minWidth: 620, idealWidth: 720, minHeight: 420, idealHeight: 520)
+#if os(iOS)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+#endif
         .onAppear {
             allowanceText = stringValue(appStore.preferences?.monthlySpendingAllowance ?? .zero)
             incomeText = stringValue(appStore.preferences?.monthlyIncomeTarget ?? .zero)
@@ -335,6 +337,7 @@ private struct CategoryBudgetEditorView: View {
             }
             .scrollContentBackground(.hidden)
             .background(DesignSystem.Colors.background)
+            .platformFormLayout()
             .navigationTitle("Category limit")
             .platformInlineNavigationTitle()
             .toolbar {
@@ -356,8 +359,11 @@ private struct CategoryBudgetEditorView: View {
                 Button("Cancel", role: .cancel) { }
             }
         }
+        .platformSheetFrame(minWidth: 560, idealWidth: 640, minHeight: 360, idealHeight: 460)
+#if os(iOS)
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
+#endif
         .onAppear {
             if let existingPlan {
                 limitText = NSDecimalNumber(decimal: existingPlan.limit).stringValue
@@ -379,24 +385,45 @@ private struct CategoryBudgetEditorView: View {
 
 private struct CategoryBudgetPickerView: View {
     @Environment(\.dismiss) private var dismiss
-    let categories: [BudgetCategory]
+    @Query(sort: \BudgetCategory.sortOrder) private var allCategories: [BudgetCategory]
     let categoriesWithPlans: Set<UUID>
     let onSelect: (BudgetCategory) -> Void
+
+    private var categories: [BudgetCategory] {
+        allCategories.filter { !$0.isArchived }.sorted {
+            $0.sortOrder == $1.sortOrder ? $0.name < $1.name : $0.sortOrder < $1.sortOrder
+        }
+    }
 
     var body: some View {
         NavigationStack {
             List {
-                ForEach(categories, id: \.id) { category in
-                    Button {
-                        onSelect(category)
-                    } label: {
-                        HStack {
-                            Label(category.name, systemImage: category.iconName)
-                            Spacer()
-                            if categoriesWithPlans.contains(category.id) {
-                                Text("Edit")
-                                    .font(.caption)
-                                    .foregroundStyle(DesignSystem.Colors.secondaryText)
+                if categories.isEmpty {
+                    EmptyStateView(
+                        systemImage: "square.grid.2x2",
+                        title: "No active categories",
+                        message: "Create or restore a category in Settings before adding a budget limit.",
+                        actionTitle: "Close"
+                    ) {
+                        dismiss()
+                    }
+                    .frame(minHeight: 240)
+                    .listRowSeparator(.hidden)
+                } else {
+                    ForEach(categories, id: \.id) { category in
+                        Button {
+                            onSelect(category)
+                        } label: {
+                            HStack {
+                                Label(category.name, systemImage: category.iconName)
+                                    .lineLimit(2)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer()
+                                if categoriesWithPlans.contains(category.id) {
+                                    Text("Edit")
+                                        .font(.caption)
+                                        .foregroundStyle(DesignSystem.Colors.secondaryText)
+                                }
                             }
                         }
                     }
@@ -410,6 +437,11 @@ private struct CategoryBudgetPickerView: View {
                 }
             }
         }
+        .platformSheetFrame(minWidth: 480, idealWidth: 560, minHeight: 360, idealHeight: 440)
+#if os(iOS)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+#endif
     }
 }
 
@@ -419,18 +451,30 @@ private struct AmountInputRow: View {
     let currencyCode: String
     var optional = false
 
-    var body: some View {
-        HStack {
-            Text(title)
-            Spacer()
+    private var amountField: some View {
+        HStack(spacing: DesignSystem.Spacing.small) {
             Text(currencyCode)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(DesignSystem.Colors.secondaryText)
             TextField(optional ? "Optional" : "0", text: $text)
                 .platformDecimalKeyboard()
                 .multilineTextAlignment(.trailing)
-                .frame(minWidth: 110)
+                .frame(minWidth: 180)
                 .font(.body.monospacedDigit())
         }
+    }
+
+    var body: some View {
+#if os(macOS)
+        LabeledContent(title) {
+            amountField
+        }
+#else
+        HStack {
+            Text(title)
+            Spacer()
+            amountField
+        }
+#endif
     }
 }

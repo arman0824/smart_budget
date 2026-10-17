@@ -126,20 +126,35 @@ struct SubscriptionsView: View {
                         .font(.subheadline)
                         .foregroundStyle(DesignSystem.Colors.secondaryText)
                     MoneyText(monthlyCost, currencyCode: currencyCode, font: .system(size: 30, design: .rounded).monospacedDigit().weight(.semibold))
+#if os(macOS)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+#endif
                     Text("monthly equivalent")
                         .font(.caption)
                         .foregroundStyle(DesignSystem.Colors.secondaryText)
                 }
+#if os(macOS)
+                .layoutPriority(1)
+#endif
                 Spacer()
                 VStack(alignment: .trailing, spacing: DesignSystem.Spacing.xxxSmall) {
                     Text("Annualized")
                         .font(.caption)
                         .foregroundStyle(DesignSystem.Colors.secondaryText)
                     MoneyText(annualCost, currencyCode: currencyCode, font: .subheadline.monospacedDigit().weight(.semibold))
+#if os(macOS)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+#endif
                     Text("\(activeSubscriptions.count) active")
                         .font(.caption)
                         .foregroundStyle(DesignSystem.Colors.secondaryText)
                 }
+#if os(macOS)
+                .frame(minWidth: 96, alignment: .trailing)
+                .layoutPriority(2)
+#endif
             }
 
             Divider().overlay(DesignSystem.Colors.divider)
@@ -284,23 +299,56 @@ private struct SubscriptionRow: View {
                     Text(subscription.name)
                         .font(.body.weight(.medium))
                         .foregroundStyle(DesignSystem.Colors.primaryText)
+#if os(macOS)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .layoutPriority(1)
+#else
                         .lineLimit(1)
+#endif
                     StatusPill(title: subscription.status.displayName, color: statusColor, background: statusColor.opacity(0.12))
+#if os(macOS)
+                        .fixedSize(horizontal: true, vertical: false)
+#endif
                 }
+#if os(macOS)
+                .frame(minWidth: 0, alignment: .leading)
+#endif
                 Text(description)
                     .font(.caption)
                     .foregroundStyle(DesignSystem.Colors.secondaryText)
+#if os(macOS)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+#else
                     .lineLimit(1)
+#endif
             }
+#if os(macOS)
+            .frame(minWidth: 0, alignment: .leading)
+            .layoutPriority(1)
+#endif
 
             Spacer(minLength: DesignSystem.Spacing.small)
 
             VStack(alignment: .trailing, spacing: DesignSystem.Spacing.xxxSmall) {
                 MoneyText(subscription.amount, currencyCode: subscription.currencyCode.isEmpty ? currencyCode : subscription.currencyCode, font: .subheadline.monospacedDigit().weight(.semibold))
+#if os(macOS)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+#endif
                 Text(subscription.billingCycle.displayName)
                     .font(.caption)
                     .foregroundStyle(DesignSystem.Colors.secondaryText)
+#if os(macOS)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+#endif
             }
+#if os(macOS)
+            .frame(minWidth: 96, alignment: .trailing)
+            .layoutPriority(2)
+#endif
         }
         .padding(.vertical, DesignSystem.Spacing.small)
         .opacity(subscription.status == .cancelled ? 0.62 : 1)

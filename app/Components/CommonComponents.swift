@@ -54,12 +54,71 @@ extension View {
         self
 #endif
     }
+
+    @ViewBuilder
+    func platformMainWindowFrame() -> some View {
+#if os(macOS)
+        self.frame(minWidth: 980, idealWidth: 1200, minHeight: 680, idealHeight: 820)
+#else
+        self
+#endif
+    }
+
+    @ViewBuilder
+    func platformSettingsFrame() -> some View {
+#if os(macOS)
+        self.frame(minWidth: 720, idealWidth: 780, minHeight: 540, idealHeight: 640)
+#else
+        self
+#endif
+    }
+
+    @ViewBuilder
+    func platformSheetFrame(
+        minWidth: CGFloat,
+        idealWidth: CGFloat,
+        minHeight: CGFloat,
+        idealHeight: CGFloat
+    ) -> some View {
+#if os(macOS)
+        self.frame(
+            minWidth: minWidth,
+            idealWidth: idealWidth,
+            minHeight: minHeight,
+            idealHeight: idealHeight
+        )
+#else
+        self
+#endif
+    }
+
+    @ViewBuilder
+    func platformFormLayout() -> some View {
+#if os(macOS)
+        self
+            .formStyle(.grouped)
+            .controlSize(.large)
+#else
+        self
+#endif
+    }
+
+    @ViewBuilder
+    func platformMultilineField(minHeight: CGFloat = 72) -> some View {
+#if os(macOS)
+        self.frame(minHeight: minHeight)
+#else
+        self
+#endif
+    }
 }
 
 extension ToolbarItemPlacement {
     static var platformLeading: ToolbarItemPlacement {
 #if os(iOS)
         .topBarLeading
+#elseif os(macOS)
+        .navigation
 #else
         .automatic
 #endif
@@ -68,6 +127,8 @@ extension ToolbarItemPlacement {
     static var platformTrailing: ToolbarItemPlacement {
 #if os(iOS)
         .topBarTrailing
+#elseif os(macOS)
+        .primaryAction
 #else
         .automatic
 #endif
@@ -182,11 +243,18 @@ struct SectionHeader: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+#if os(macOS)
+            .layoutPriority(1)
+#endif
 
             Spacer(minLength: DesignSystem.Spacing.small)
 
             if let trailing {
+#if os(macOS)
+                trailing.fixedSize(horizontal: true, vertical: false)
+#else
                 trailing
+#endif
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

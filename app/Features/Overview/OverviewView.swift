@@ -110,17 +110,26 @@ struct OverviewView: View {
                     Image(systemName: "plus")
                 }
                 .accessibilityLabel("Add transaction")
+#if os(macOS)
+                SettingsLink {
+                    Image(systemName: "gearshape")
+                        .accessibilityLabel("Settings")
+                }
+#else
                 Button {
                     showSettings = true
                 } label: {
                     Image(systemName: "gearshape")
                 }
                 .accessibilityLabel("Settings")
+#endif
             }
         }
+#if os(iOS)
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
+#endif
         .sheet(isPresented: $showTransactionForm) {
             TransactionFormView(transaction: selectedTransaction)
         }
