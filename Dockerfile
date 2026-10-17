@@ -8,7 +8,9 @@ WORKDIR /workspace
 COPY Makefile README.md ./
 COPY Dockerfile ./
 COPY app.xcodeproj/project.pbxproj ./app.xcodeproj/project.pbxproj
+COPY app.xcodeproj/xcshareddata/xcschemes/app.xcscheme ./app.xcodeproj/xcshareddata/xcschemes/app.xcscheme
 COPY app/ ./app/
+COPY Tests/ ./Tests/
 
 ENV SOURCE_ONLY=1
 

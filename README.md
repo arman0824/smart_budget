@@ -1,13 +1,13 @@
 # Smart Budget & Subscription Tracker
 
-Smart Budget & Subscription Tracker is a SwiftUI iOS app organized around a
-local-first domain model. The repository currently contains the data and
-service layers; `ContentView` is the SwiftUI entry view.
+Smart Budget & Subscription Tracker is a native SwiftUI iOS app organized
+around a local-first domain model. `ContentView` routes into onboarding or the
+five-tab finance experience.
 
 ## Architecture
 
-- `app/MyApp.swift` is the application entry point and `app/ContentView.swift`
-  is the current view-layer entry point.
+- `app/MyApp.swift` creates the shared SwiftData container and
+  `app/ContentView.swift` routes into the app shell.
 - `app/Models/` contains SwiftData models for transactions, categories,
   budgets, subscriptions, and preferences.
 - `app/Persistence/ModelContainerFactory.swift` defines the SwiftData schema,
@@ -21,10 +21,9 @@ service layers; `ContentView` is the SwiftUI entry view.
   initiated CSV `FileDocument` export.
 
 There is no backend, network service, analytics SDK, or third-party package.
-The persistence layer is local-first: data is intended to remain on the
-device in SwiftData. The current root view has not yet injected the container
-into the view hierarchy; that wiring belongs in `MyApp` when the UI is
-connected to the models.
+The persistence layer is local-first: data remains on the device in SwiftData.
+`Tests/FinancialCalculatorTests.swift` covers core money, budget, billing-date,
+CSV, and persistence bootstrap behavior in the `appTests` XCTest target.
 
 ## Supported toolchain and target
 
@@ -60,23 +59,26 @@ For a command-line compile smoke check, use the same developer directory:
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
   xcodebuild -project app.xcodeproj -scheme app -configuration Debug \
   -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
-  CODE_SIGNING_ALLOWED=NO build
+  CODE_SIGNING_ALLOWED=NO build-for-testing
 ```
 
 ## Checks
 
-The repository has no XCTest bundle yet. `make test` therefore performs the
-meaningful available check: it compiles the app for a generic iOS Simulator
-without code signing.
+`make test` compiles the app and XCTest bundle for a generic iOS Simulator
+without code signing. This offline build-for-testing check is the repository's
+single reproducible test command and does not need a booted simulator.
 
 ```sh
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer make test
 ```
 
 Without a full Xcode developer directory, `make test` exits nonzero with a
-message explaining how to select one. Docker runs the same target in its
-explicit Linux source-validation mode; it validates repository structure and
-key project settings, but deliberately skips the iOS build:
+message explaining how to select one. To execute the XCTest methods rather
+than only compile them, run the `app` scheme's Test action in Xcode with an
+available iOS 27 simulator or device. This checkout has no simulator devices
+registered, so automated execution is not claimed here. Docker runs the same
+target in its explicit Linux source-validation mode; it validates repository
+structure and key project settings, but deliberately skips the iOS build:
 
 ```sh
 docker build --tag smart-budget-source-check .

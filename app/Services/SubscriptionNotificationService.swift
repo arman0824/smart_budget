@@ -53,6 +53,11 @@ public final class SubscriptionNotificationService {
             return false
         }
 
+        guard subscription.reminderDaysBefore > 0 else {
+            cancelReminder(for: subscription.id)
+            return false
+        }
+
         guard let reminderDate = reminderDate(
             for: subscription,
             preferences: preferences,

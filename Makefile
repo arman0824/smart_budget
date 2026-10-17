@@ -12,6 +12,7 @@ test:
 			"app/MyApp.swift" \
 			"app/ContentView.swift" \
 			"app/Persistence/ModelContainerFactory.swift" \
+			"Tests/FinancialCalculatorTests.swift" \
 			"README.md" \
 			"Makefile" \
 			"Dockerfile"; do \
@@ -36,4 +37,4 @@ test:
 		-destination 'generic/platform=iOS Simulator' \
 		-derivedDataPath "$(DERIVED_DATA_PATH)" \
 		CODE_SIGNING_ALLOWED=NO \
-		build
+		build-for-testing

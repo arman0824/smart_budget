@@ -1,17 +1,14 @@
 import SwiftUI
-import Playgrounds
+import SwiftData
 
 struct ContentView: View {
     var body: some View {
-        Text("Hello, world!")
-            .padding()
+        RootView()
     }
 }
 
-#Preview {
+#Preview("Smart Budget") {
     ContentView()
-}
-
-#Playground {
-    _ = 1 + 2
+        .environmentObject(PreviewSupport.store)
+        .modelContainer(PreviewSupport.container)
 }
