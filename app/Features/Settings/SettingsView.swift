@@ -245,23 +245,15 @@ private struct AmountSettingRow: View {
             TextField("0", text: $value)
                 .platformDecimalKeyboard()
                 .multilineTextAlignment(.trailing)
-                .frame(minWidth: 180)
+                .platformAmountFieldWidth()
                 .font(.body.monospacedDigit())
         }
     }
 
     var body: some View {
-#if os(macOS)
         LabeledContent(title) {
             amountField
         }
-#else
-        HStack {
-            Text(title)
-            Spacer()
-            amountField
-        }
-#endif
     }
 }
 

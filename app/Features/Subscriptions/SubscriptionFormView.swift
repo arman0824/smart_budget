@@ -64,7 +64,7 @@ struct SubscriptionFormView: View {
                 .platformDecimalKeyboard()
                 .multilineTextAlignment(.trailing)
                 .font(.title3.monospacedDigit().weight(.semibold))
-                .frame(minWidth: 180)
+                .platformAmountFieldWidth()
         }
     }
 
@@ -76,13 +76,9 @@ struct SubscriptionFormView: View {
                         .platformWordsAutocapitalization()
                     TextField("Merchant (optional)", text: $merchant)
                         .platformWordsAutocapitalization()
-#if os(macOS)
                     LabeledContent("Price") {
                         amountField
                     }
-#else
-                    amountField
-#endif
                     Picker("Billing currency", selection: $currencyCode) {
                         ForEach(currencies, id: \.self) { code in
                             Text(code).tag(code)

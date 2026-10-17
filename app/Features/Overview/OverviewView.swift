@@ -1,4 +1,3 @@
-import Charts
 import SwiftUI
 import SwiftData
 
@@ -10,7 +9,6 @@ struct OverviewView: View {
     @Query private var budgets: [BudgetPlan]
 
     @State private var selectedMonth = Date()
-    @State private var snapshotRange: SnapshotRange = .month
     @State private var showSettings = false
     @State private var showTransactionForm = false
     @State private var selectedTransaction: Transaction?
@@ -26,17 +24,6 @@ struct OverviewView: View {
     private var progress: Double {
         guard allowance > .zero else { return 0 }
         return max(0, NSDecimalNumber(decimal: summary.spending / allowance).doubleValue)
-    }
-    private var categoryNames: [UUID: String] { Dictionary(uniqueKeysWithValues: visibleCategories.map { ($0.id, $0.name) }) }
-    private var insights: [FinancialInsight] {
-        FinancialCalculator.deterministicInsights(
-            for: selectedMonth,
-            transactions: transactions,
-            budgets: budgets,
-            subscriptions: subscriptions,
-            categoryNames: categoryNames,
-            calendar: appStore.calendar
-        )
     }
     private var topCategories: [OverviewCategory] {
         visibleCategories
@@ -78,30 +65,17 @@ struct OverviewView: View {
                 }
                 summarySurface
                 budgetHealth
-                spendingSnapshot
                 upcomingSection
                 recentSection
-                insightsSection
             }
             .padding(.horizontal, DesignSystem.Spacing.large)
             .padding(.top, DesignSystem.Spacing.small)
             .padding(.bottom, DesignSystem.Spacing.xxLarge)
         }
         .background(DesignSystem.Colors.background.ignoresSafeArea())
-        .navigationTitle("Your finances")
+        .navigationTitle("Overview")
         .platformLargeNavigationTitle()
         .toolbar {
-            ToolbarItem(placement: .platformLeading) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(greeting)
-                        .font(.caption)
-                        .foregroundStyle(DesignSystem.Colors.secondaryText)
-                    Text("A calm view of today")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(DesignSystem.Colors.primaryText)
-                }
-                .accessibilityElement(children: .combine)
-            }
             ToolbarItemGroup(placement: .platformTrailing) {
                 Button {
                     selectedTransaction = nil
@@ -142,17 +116,28 @@ struct OverviewView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxxSmall) {
-                Text("Good \(greeting.lowercased())")
-                    .font(.subheadline)
-                    .foregroundStyle(DesignSystem.Colors.secondaryText)
-                Text("Your finances")
-                    .font(.system(.largeTitle, design: .rounded).weight(.semibold))
-                    .foregroundStyle(DesignSystem.Colors.primaryText)
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .bottom) {
+                headerCopy
+                Spacer(minLength: DesignSystem.Spacing.small)
+                MonthSelector(month: $selectedMonth, calendar: appStore.calendar)
             }
-            Spacer(minLength: DesignSystem.Spacing.small)
-            MonthSelector(month: $selectedMonth, calendar: appStore.calendar)
+
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
+                headerCopy
+                MonthSelector(month: $selectedMonth, calendar: appStore.calendar)
+            }
+        }
+    }
+
+    private var headerCopy: some View {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxxSmall) {
+            Text("Good \(greeting)")
+                .font(.subheadline)
+                .foregroundStyle(DesignSystem.Colors.secondaryText)
+            Text("A calm view of today")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(DesignSystem.Colors.primaryText)
         }
     }
 
@@ -228,84 +213,32 @@ struct OverviewView: View {
         .accessibilityElement(children: .combine)
     }
 
+    @ViewBuilder
     private var budgetHealth: some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
-            SectionHeader("Budget health", subtitle: topCategories.isEmpty ? "Category limits appear as you add them" : "Your three largest categories this month")
-            if topCategories.isEmpty {
-                EmptyStateView(
-                    systemImage: "chart.bar.xaxis",
-                    title: summary.transactionCount == 0 ? "Your first month starts here" : "No categorized spending yet",
-                    message: "Add a categorized expense or set a category limit in Budgets.",
-                    actionTitle: summary.transactionCount == 0 ? "Add transaction" : "Open Budgets"
-                ) {
-                    if summary.transactionCount == 0 {
-                        showTransactionForm = true
-                    } else {
+        if topCategories.isEmpty && summary.transactionCount == 0 {
+            EmptyView()
+        } else {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
+                SectionHeader("Budget health", subtitle: topCategories.isEmpty ? "Category limits appear as you add them" : "Your three largest categories this month")
+                if topCategories.isEmpty {
+                    EmptyStateView(
+                        systemImage: "chart.bar.xaxis",
+                        title: "No categorized spending yet",
+                        message: "Add a categorized expense or set a category limit in Budgets.",
+                        actionTitle: "Open Budgets"
+                    ) {
                         appStore.selectedTab = .budgets
                     }
-                }
-                .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
-            } else {
-                FinancialSurface(padding: EdgeInsets(top: 8, leading: DesignSystem.Spacing.medium, bottom: 8, trailing: DesignSystem.Spacing.medium)) {
-                    ForEach(topCategories) { item in
-                        CategoryBudgetRow(category: item.category, spent: item.spent, limit: item.limit, currencyCode: currencyCode, onTap: nil)
-                        if item.id != topCategories.last?.id {
-                            Divider().overlay(DesignSystem.Colors.divider)
+                    .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
+                } else {
+                    FinancialSurface(padding: EdgeInsets(top: 8, leading: DesignSystem.Spacing.medium, bottom: 8, trailing: DesignSystem.Spacing.medium)) {
+                        ForEach(topCategories) { item in
+                            CategoryBudgetRow(category: item.category, spent: item.spent, limit: item.limit, currencyCode: currencyCode, onTap: nil)
+                            if item.id != topCategories.last?.id {
+                                Divider().overlay(DesignSystem.Colors.divider)
+                            }
                         }
                     }
-                }
-            }
-        }
-    }
-
-    private var spendingSnapshot: some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
-            SectionHeader("Spending snapshot", subtitle: snapshotRange == .month ? "Daily spending in the selected month" : "The last seven days") {
-                Picker("Snapshot range", selection: $snapshotRange) {
-                    ForEach(SnapshotRange.allCases) { range in
-                        Text(range.title).tag(range)
-                    }
-                }
-                .pickerStyle(.menu)
-                .labelsHidden()
-            }
-
-            if snapshotPoints.isEmpty {
-                EmptyStateView(
-                    systemImage: "chart.line.uptrend.xyaxis",
-                    title: "No spending to chart",
-                    message: "Add an expense to see your daily pattern."
-                )
-                .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
-            } else {
-                FinancialSurface {
-                    Chart(snapshotPoints) { point in
-                        AreaMark(
-                            x: .value("Date", point.date, unit: .day),
-                            y: .value("Spending", point.amount)
-                        )
-                        .foregroundStyle(DesignSystem.Colors.accent.opacity(0.16).gradient)
-                        LineMark(
-                            x: .value("Date", point.date, unit: .day),
-                            y: .value("Spending", point.amount)
-                        )
-                        .foregroundStyle(DesignSystem.Colors.accent)
-                        .lineStyle(StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
-                        PointMark(
-                            x: .value("Date", point.date, unit: .day),
-                            y: .value("Spending", point.amount)
-                        )
-                        .foregroundStyle(DesignSystem.Colors.accent)
-                    }
-                    .chartXAxis {
-                        AxisMarks(values: .automatic(desiredCount: 5)) { value in
-                            AxisValueLabel(format: .dateTime.day().month(.abbreviated))
-                        }
-                    }
-                    .chartYAxis(.hidden)
-                    .frame(height: 180)
-                    .accessibilityLabel("Spending over time")
-                    .accessibilityValue(Text(snapshotAccessibilitySummary))
                 }
             }
         }
@@ -381,51 +314,6 @@ struct OverviewView: View {
         }
     }
 
-    private var insightsSection: some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
-            SectionHeader("Worth knowing", subtitle: "A few signals from your records")
-            if insights.isEmpty {
-                Text("Add a budget, subscription, or transaction and this space will stay focused on useful observations.")
-                    .font(.subheadline)
-                    .foregroundStyle(DesignSystem.Colors.secondaryText)
-                    .padding(.horizontal, DesignSystem.Spacing.small)
-            } else {
-                FinancialSurface {
-                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
-                        ForEach(insights.prefix(2)) { insight in
-                            InsightCard(insight: insight, currencyCode: currencyCode)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private var snapshotPoints: [OverviewPoint] {
-        let start: Date
-        let end: Date
-        if snapshotRange == .month {
-            guard let interval = appStore.calendar.dateInterval(of: .month, for: selectedMonth) else { return [] }
-            start = interval.start
-            end = interval.end
-        } else {
-            end = Date()
-            start = appStore.calendar.date(byAdding: .day, value: -6, to: appStore.calendar.startOfDay(for: end)) ?? end
-        }
-        let rangeTransactions = transactions.filter { $0.date >= start && $0.date < end }
-        let grouped = Dictionary(grouping: rangeTransactions) { appStore.calendar.startOfDay(for: $0.date) }
-        return grouped.keys.sorted().compactMap { date in
-            let amount = (grouped[date] ?? []).reduce(Decimal.zero) { $0 + $1.budgetImpactAmount }
-            guard amount > .zero else { return nil }
-            return OverviewPoint(date: date, amount: NSDecimalNumber(decimal: amount).doubleValue)
-        }
-    }
-
-    private var snapshotAccessibilitySummary: String {
-        guard let point = snapshotPoints.max(by: { $0.amount < $1.amount }) else { return "No spending recorded" }
-        return "Highest day was \(point.date.formatted(date: .abbreviated, time: .omitted)) at \(MoneyTextValue.string(Decimal(point.amount), currencyCode: currencyCode))."
-    }
-
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: Date())
         if hour < 12 { return "morning" }
@@ -455,20 +343,6 @@ private struct OverviewCategory: Identifiable {
     let spent: Decimal
     let limit: Decimal
     var id: UUID { category.id }
-}
-
-private struct OverviewPoint: Identifiable {
-    let date: Date
-    let amount: Double
-    var id: Date { date }
-}
-
-private enum SnapshotRange: String, CaseIterable, Identifiable {
-    case week
-    case month
-
-    var id: String { rawValue }
-    var title: String { rawValue.capitalized }
 }
 
 #Preview("Overview · sample data") {

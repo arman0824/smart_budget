@@ -43,6 +43,24 @@ struct MainTabView: View {
     @EnvironmentObject private var appStore: AppStore
 
     var body: some View {
+#if os(macOS)
+        NavigationSplitView {
+            List(selection: selectedTabBinding) {
+                ForEach(navigationTabs, id: \.self) { tab in
+                    Label(tab.title, systemImage: tab.systemImage)
+                        .tag(tab)
+                }
+            }
+            .listStyle(.sidebar)
+            .navigationTitle("Smart Budget")
+            .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 280)
+        } detail: {
+            NavigationStack {
+                selectedSection
+            }
+            .frame(minWidth: 600, maxHeight: .infinity)
+        }
+#else
         TabView(selection: $appStore.selectedTab) {
             NavigationStack {
                 OverviewView()
@@ -83,6 +101,72 @@ struct MainTabView: View {
                 Label("Insights", systemImage: "chart.xyaxis.line")
             }
             .tag(AppTab.insights)
+        }
+#endif
+    }
+
+    private var navigationTabs: [AppTab] {
+        [.overview, .activity, .budgets, .subscriptions, .insights]
+    }
+
+#if os(macOS)
+    private var selectedTabBinding: Binding<AppTab?> {
+        Binding(
+            get: { appStore.selectedTab },
+            set: { selectedTab in
+                if let selectedTab {
+                    appStore.selectedTab = selectedTab
+                }
+            }
+        )
+    }
+#endif
+
+    @ViewBuilder
+    private var selectedSection: some View {
+        switch appStore.selectedTab {
+        case .overview:
+            OverviewView()
+        case .activity:
+            ActivityView()
+        case .budgets:
+            BudgetsView()
+        case .subscriptions:
+            SubscriptionsView()
+        case .insights:
+            InsightsView()
+        }
+    }
+}
+
+private extension AppTab {
+    var title: String {
+        switch self {
+        case .overview:
+            "Overview"
+        case .activity:
+            "Activity"
+        case .budgets:
+            "Budgets"
+        case .subscriptions:
+            "Subscriptions"
+        case .insights:
+            "Insights"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .overview:
+            "house"
+        case .activity:
+            "arrow.left.arrow.right"
+        case .budgets:
+            "chart.pie"
+        case .subscriptions:
+            "repeat"
+        case .insights:
+            "chart.xyaxis.line"
         }
     }
 }

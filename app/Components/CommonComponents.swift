@@ -111,6 +111,15 @@ extension View {
         self
 #endif
     }
+
+    @ViewBuilder
+    func platformAmountFieldWidth() -> some View {
+#if os(macOS)
+        self.frame(minWidth: 180)
+#else
+        self.frame(minWidth: 110)
+#endif
+    }
 }
 
 extension ToolbarItemPlacement {
@@ -191,6 +200,8 @@ struct MoneyText: View {
             .font(font)
             .fontWeight(weight)
             .foregroundStyle(color)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(formattedAmount)
     }
@@ -243,18 +254,12 @@ struct SectionHeader: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-#if os(macOS)
             .layoutPriority(1)
-#endif
 
             Spacer(minLength: DesignSystem.Spacing.small)
 
             if let trailing {
-#if os(macOS)
                 trailing.fixedSize(horizontal: true, vertical: false)
-#else
-                trailing
-#endif
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

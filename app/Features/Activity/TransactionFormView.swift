@@ -61,7 +61,7 @@ struct TransactionFormView: View {
                 .platformDecimalKeyboard()
                 .multilineTextAlignment(.trailing)
                 .font(.system(.title2, design: .rounded).monospacedDigit().weight(.semibold))
-                .frame(minWidth: 180)
+                .platformAmountFieldWidth()
                 .accessibilityLabel("Amount")
         }
     }
@@ -77,13 +77,9 @@ struct TransactionFormView: View {
                     }
                     .pickerStyle(.segmented)
 
-#if os(macOS)
                     LabeledContent("Amount") {
                         amountField
                     }
-#else
-                    amountField
-#endif
 
                     TextField("Merchant or title", text: $merchant)
                         .platformWordsAutocapitalization()

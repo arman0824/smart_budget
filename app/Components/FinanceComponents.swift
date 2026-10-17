@@ -10,12 +10,12 @@ struct MonthSelector: View {
     }
 
     var body: some View {
-        HStack(spacing: DesignSystem.Spacing.small) {
+        HStack(spacing: DesignSystem.Spacing.xxxSmall) {
             Button {
                 moveMonth(by: -1)
             } label: {
                 Image(systemName: "chevron.left")
-                    .frame(width: 36, height: 36)
+                    .frame(width: 30, height: 30)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Previous month")
@@ -23,19 +23,21 @@ struct MonthSelector: View {
             Text(month, format: .dateTime.month(.wide).year())
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(DesignSystem.Colors.primaryText)
-                .frame(minWidth: 130)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(minWidth: 112)
 
             Button {
                 moveMonth(by: 1)
             } label: {
                 Image(systemName: "chevron.right")
-                    .frame(width: 36, height: 36)
+                    .frame(width: 30, height: 30)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Next month")
         }
         .foregroundStyle(DesignSystem.Colors.success)
-        .padding(.horizontal, DesignSystem.Spacing.xSmall)
+        .padding(.horizontal, DesignSystem.Spacing.xxSmall)
         .padding(.vertical, DesignSystem.Spacing.xxxSmall)
         .background(DesignSystem.Colors.surface, in: Capsule())
         .overlay {
