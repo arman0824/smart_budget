@@ -33,8 +33,9 @@ CSV, and persistence bootstrap behavior in the `appTests` XCTest target.
   `CreatedOnToolsVersion = 26.3`, `LastUpgradeCheck = 2700`, and
   `SWIFT_VERSION = 5.0`.
 - The primary build path is `iphoneos`/`iphonesimulator` with an
-  `IPHONEOS_DEPLOYMENT_TARGET` of **iOS 27.0**. The project file also lists
-  macOS and visionOS platforms; this repository's checks target iOS.
+  `IPHONEOS_DEPLOYMENT_TARGET` of **iOS 27.0**. The app target is explicitly
+  limited to iPhone and iPad so Xcode does not compile the iOS-only SwiftUI
+  views as a macOS app.
 - Xcode is required to build or run the iOS app. Linux cannot build SwiftUI,
   SwiftData, or the iOS application SDK.
 

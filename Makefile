@@ -20,6 +20,8 @@ test:
 		done; \
 		grep -q 'IPHONEOS_DEPLOYMENT_TARGET = 27.0;' "$(PROJECT)/project.pbxproj" || { printf '%s\n' 'Expected iOS deployment target is missing.' >&2; exit 1; }; \
 		grep -q 'SWIFT_VERSION = 5.0;' "$(PROJECT)/project.pbxproj" || { printf '%s\n' 'Expected Swift language version is missing.' >&2; exit 1; }; \
+		grep -q 'SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";' "$(PROJECT)/project.pbxproj" || { printf '%s\n' 'The app target must remain iOS-only.' >&2; exit 1; }; \
+		grep -q 'TARGETED_DEVICE_FAMILY = "1,2";' "$(PROJECT)/project.pbxproj" || { printf '%s\n' 'The app target must target iPhone and iPad.' >&2; exit 1; }; \
 		grep -q 'import SwiftData' app/Persistence/ModelContainerFactory.swift || { printf '%s\n' 'SwiftData persistence source is missing.' >&2; exit 1; }; \
 		printf '%s\n' 'Linux source validation passed; the iOS build was intentionally skipped.'; \
 		exit 0; \
