@@ -31,6 +31,9 @@ struct MyApp: App {
                 .environmentObject(appStore)
                 .environment(\.locale, Locale(identifier: appStore.preferences?.localeIdentifier ?? "en_IN"))
                 .modelContainer(modelContainer)
+                .preferredColorScheme(.light)
+                .foregroundStyle(DesignSystem.Colors.primaryText)
+                .tint(DesignSystem.Colors.success)
         }
         .menuBarExtraStyle(.window)
 
