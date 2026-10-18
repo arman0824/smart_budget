@@ -96,7 +96,8 @@ struct InsightsView: View {
                     Chart(spendingPoints) { point in
                         BarMark(
                             x: .value("Date", point.date, unit: range == .year ? .month : .day),
-                            y: .value("Spending", point.amount)
+                            y: .value("Spending", point.amount),
+                            width: .ratio(0.65)
                         )
                         .foregroundStyle(DesignSystem.Colors.accent.gradient)
                         .cornerRadius(3)
@@ -143,14 +144,16 @@ struct InsightsView: View {
                 Chart(monthlyPoints) { point in
                     BarMark(
                         x: .value("Month", point.month, unit: .month),
-                        y: .value("Amount", point.income)
+                        y: .value("Amount", point.income),
+                        width: .ratio(0.65)
                     )
                     .foregroundStyle(DesignSystem.Colors.success)
                     .position(by: .value("Type", "Income"))
 
                     BarMark(
                         x: .value("Month", point.month, unit: .month),
-                        y: .value("Amount", point.spending)
+                        y: .value("Amount", point.spending),
+                        width: .ratio(0.65)
                     )
                     .foregroundStyle(DesignSystem.Colors.accent)
                     .position(by: .value("Type", "Spending"))
@@ -172,7 +175,7 @@ struct InsightsView: View {
                     }
                 }
                 .chartXAxis {
-                    AxisMarks { value in
+                    AxisMarks(values: monthlyXAxisDates) { value in
                         AxisValueLabel(anchor: .top) {
                             if let date = value.as(Date.self) {
                                 Text(date, format: .dateTime.month(.abbreviated))
@@ -329,6 +332,12 @@ struct InsightsView: View {
         return dates.map { month in
             let summary = FinancialCalculator.monthSummary(for: month, transactions: transactions, calendar: appStore.calendar)
             return MonthlyPoint(month: month, income: summary.income, spending: summary.spending)
+        }
+    }
+
+    private var monthlyXAxisDates: [Date] {
+        monthlyPoints.enumerated().compactMap { index, point in
+            range == .year && !index.isMultiple(of: 2) ? nil : point.month
         }
     }
 

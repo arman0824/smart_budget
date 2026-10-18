@@ -31,6 +31,7 @@ struct MyApp: App {
                 .environmentObject(appStore)
                 .environment(\.locale, Locale(identifier: appStore.preferences?.localeIdentifier ?? "en_IN"))
                 .modelContainer(modelContainer)
+                .colorScheme(.light)
                 .preferredColorScheme(.light)
                 .foregroundStyle(DesignSystem.Colors.primaryText)
                 .tint(DesignSystem.Colors.success)
