@@ -19,18 +19,6 @@ Everything is designed to be simple and private: financial records stay on the
 device in SwiftData, and there is no sign-in, tracking, analytics SDK, or
 server-side data store.
 
-## Screenshots
-
-<p align="center">
-  <img src="docs/screenshots/insights.png" alt="Smart Budget Insights dashboard on macOS" width="92%">
-</p>
-<p align="center"><em>Insights dashboard</em></p>
-
-<p align="center">
-  <img src="docs/screenshots/quick-log.png" alt="Smart Budget Quick Log menu bar window on macOS" width="420">
-</p>
-<p align="center"><em>Quick Log menu bar window</em></p>
-
 ## Architecture
 
 - `app/MyApp.swift` creates the shared SwiftData container and
