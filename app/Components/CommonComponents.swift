@@ -56,15 +56,6 @@ extension View {
     }
 
     @ViewBuilder
-    func platformMainWindowFrame() -> some View {
-#if os(macOS)
-        self.frame(minWidth: 980, idealWidth: 1200, minHeight: 680, idealHeight: 820)
-#else
-        self
-#endif
-    }
-
-    @ViewBuilder
     func platformSettingsFrame() -> some View {
 #if os(macOS)
         self.frame(minWidth: 720, idealWidth: 780, minHeight: 540, idealHeight: 640)

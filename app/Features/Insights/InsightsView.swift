@@ -10,8 +10,8 @@ struct InsightsView: View {
     @Query private var budgets: [BudgetPlan]
 
     @State private var range: InsightRange = .month
-    @State private var selectedMonth = Date()
 
+    private var selectedMonth: Date { appStore.selectedMonth }
     private var currencyCode: String { appStore.preferences?.currencyCode ?? "INR" }
     private var categoryNames: [UUID: String] { Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0.name) }) }
     private var interval: DateInterval? { range.interval(around: selectedMonth, calendar: appStore.calendar) }
@@ -55,9 +55,6 @@ struct InsightsView: View {
         .background(DesignSystem.Colors.background.ignoresSafeArea())
         .navigationTitle("Insights")
         .platformLargeNavigationTitle()
-        .onAppear {
-            selectedMonth = appStore.selectedMonth
-        }
     }
 
     private var header: some View {
@@ -70,7 +67,7 @@ struct InsightsView: View {
                     .font(.title3.weight(.semibold))
             }
             Spacer()
-            MonthSelector(month: $selectedMonth, calendar: appStore.calendar)
+            MonthSelector(month: $appStore.selectedMonth, calendar: appStore.calendar)
         }
     }
 
@@ -108,7 +105,7 @@ struct InsightsView: View {
                         AxisMarks(position: .leading) { value in
                             AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
                                 .foregroundStyle(DesignSystem.Colors.divider)
-                            AxisValueLabel {
+                            AxisValueLabel(anchor: .leading) {
                                 if let amount = value.as(Decimal.self) {
                                     Text(MoneyTextValue.string(amount, currencyCode: currencyCode))
                                         .font(.caption2)
@@ -118,8 +115,16 @@ struct InsightsView: View {
                     }
                     .chartXAxis {
                         AxisMarks(values: .automatic(desiredCount: range == .year ? 6 : 5)) { value in
-                            AxisValueLabel(format: range == .year ? .dateTime.month(.abbreviated) : .dateTime.day().month(.abbreviated))
-                                .font(.caption2)
+                            AxisValueLabel(anchor: .top) {
+                                if let date = value.as(Date.self) {
+                                    if range == .year {
+                                        Text(date, format: .dateTime.month(.abbreviated))
+                                    } else {
+                                        Text(date, format: .dateTime.day().month(.abbreviated))
+                                    }
+                                }
+                            }
+                            .font(.caption2)
                         }
                     }
                     .frame(height: 210)
@@ -158,7 +163,7 @@ struct InsightsView: View {
                 .chartYAxis {
                     AxisMarks(position: .leading) { value in
                         AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(DesignSystem.Colors.divider)
-                        AxisValueLabel {
+                        AxisValueLabel(anchor: .leading) {
                             if let amount = value.as(Decimal.self) {
                                 Text(MoneyTextValue.string(amount, currencyCode: currencyCode))
                                     .font(.caption2)
@@ -168,7 +173,11 @@ struct InsightsView: View {
                 }
                 .chartXAxis {
                     AxisMarks { value in
-                        AxisValueLabel(format: .dateTime.month(.abbreviated))
+                        AxisValueLabel(anchor: .top) {
+                            if let date = value.as(Date.self) {
+                                Text(date, format: .dateTime.month(.abbreviated))
+                            }
+                        }
                     }
                 }
                 .frame(height: 210)
@@ -201,7 +210,7 @@ struct InsightsView: View {
                     .chartXAxis(.hidden)
                     .chartYAxis {
                         AxisMarks { _ in
-                            AxisValueLabel()
+                            AxisValueLabel(anchor: .leading)
                         }
                     }
                     .frame(height: CGFloat(max(160, values.count * 42)))

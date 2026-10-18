@@ -123,7 +123,7 @@ struct QuickLogView: View {
             }
             .formStyle(.grouped)
             .scrollContentBackground(.hidden)
-            .frame(maxHeight: 430)
+            .frame(height: 430)
 
             Divider()
 
@@ -132,7 +132,10 @@ struct QuickLogView: View {
         .frame(width: 380)
         .background(DesignSystem.Colors.background)
         .onAppear {
-            focusedField = .amount
+            Task { @MainActor in
+                await Task.yield()
+                focusedField = .amount
+            }
         }
         .onChange(of: kind) { _, newValue in
             if newValue == .income || newValue == .transfer {
@@ -172,8 +175,11 @@ struct QuickLogView: View {
     private var footerActions: some View {
         HStack(spacing: DesignSystem.Spacing.small) {
             Button("Open Smart Budget") {
-                openWindow(id: "main")
-                dismiss()
+                Task { @MainActor in
+                    openWindow(id: "main")
+                    await Task.yield()
+                    dismiss()
+                }
             }
             .buttonStyle(.link)
 

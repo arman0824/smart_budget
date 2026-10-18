@@ -106,6 +106,7 @@ final class AppStore: ObservableObject {
     }
 
     func clearError() {
+        guard lastError != nil else { return }
         lastError = nil
     }
 

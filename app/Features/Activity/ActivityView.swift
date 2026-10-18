@@ -6,7 +6,6 @@ struct ActivityView: View {
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     @Query(sort: \BudgetCategory.sortOrder) private var categories: [BudgetCategory]
 
-    @State private var selectedMonth = Date()
     @State private var searchText = ""
     @State private var typeFilter: ActivityTypeFilter = .all
     @State private var categoryFilter: UUID?
@@ -14,6 +13,8 @@ struct ActivityView: View {
     @State private var showFilters = false
     @State private var showTransactionForm = false
     @State private var selectedTransaction: Transaction?
+
+    private var selectedMonth: Date { appStore.selectedMonth }
 
     private var currencyCode: String {
         appStore.preferences?.currencyCode ?? "INR"
@@ -101,9 +102,6 @@ struct ActivityView: View {
         .sheet(isPresented: $showTransactionForm) {
             TransactionFormView(transaction: selectedTransaction)
         }
-        .onAppear {
-            selectedMonth = appStore.selectedMonth
-        }
     }
 
     private var header: some View {
@@ -117,7 +115,7 @@ struct ActivityView: View {
                     .foregroundStyle(DesignSystem.Colors.primaryText)
             }
             Spacer()
-            MonthSelector(month: $selectedMonth, calendar: appStore.calendar)
+            MonthSelector(month: $appStore.selectedMonth, calendar: appStore.calendar)
         }
     }
 

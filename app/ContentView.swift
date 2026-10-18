@@ -4,7 +4,6 @@ import SwiftData
 struct ContentView: View {
     var body: some View {
         RootView()
-            .platformMainWindowFrame()
     }
 }
 

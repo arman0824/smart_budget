@@ -7,11 +7,11 @@ struct BudgetsView: View {
     @Query(sort: \BudgetCategory.sortOrder) private var categories: [BudgetCategory]
     @Query(sort: \BudgetPlan.monthStart) private var plans: [BudgetPlan]
 
-    @State private var selectedMonth = Date()
     @State private var showPlanEditor = false
     @State private var selectedCategory: BudgetCategory?
     @State private var showCategoryPicker = false
 
+    private var selectedMonth: Date { appStore.selectedMonth }
     private var currencyCode: String { appStore.preferences?.currencyCode ?? "INR" }
     private var preferences: AppPreferences? { appStore.preferences }
 
@@ -84,9 +84,6 @@ struct BudgetsView: View {
         .sheet(item: $selectedCategory) { category in
             CategoryBudgetEditorView(category: category, month: selectedMonth, existingPlan: plan(for: category))
         }
-        .onAppear {
-            selectedMonth = appStore.selectedMonth
-        }
     }
 
     private var monthHeader: some View {
@@ -99,7 +96,7 @@ struct BudgetsView: View {
                     .font(.title3.weight(.semibold))
             }
             Spacer()
-            MonthSelector(month: $selectedMonth, calendar: appStore.calendar)
+            MonthSelector(month: $appStore.selectedMonth, calendar: appStore.calendar)
         }
     }
 

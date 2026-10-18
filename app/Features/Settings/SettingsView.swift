@@ -53,7 +53,10 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: selectedCurrency) { _, newValue in
-                        appStore.updateCurrency(newValue)
+                        guard newValue != appStore.preferences?.currencyCode else { return }
+                        Task { @MainActor in
+                            appStore.updateCurrency(newValue)
+                        }
                     }
 
                     NavigationLink {
@@ -73,7 +76,9 @@ struct SettingsView: View {
                     Toggle("Renewal reminders", isOn: $notificationsEnabled)
                         .tint(DesignSystem.Colors.success)
                         .onChange(of: notificationsEnabled) { _, isEnabled in
-                            updateNotifications(isEnabled)
+                            Task { @MainActor in
+                                updateNotifications(isEnabled)
+                            }
                         }
                 } header: {
                     Text("Notifications")
@@ -152,7 +157,6 @@ struct SettingsView: View {
                 Text(message ?? "")
             }
         }
-        .platformSettingsFrame()
         .onAppear {
             selectedCurrency = appStore.preferences?.currencyCode ?? "INR"
             notificationsEnabled = appStore.preferences?.notificationsEnabled ?? false
@@ -187,6 +191,7 @@ struct SettingsView: View {
 
 private struct MonthlyPlanSettingsView: View {
     @EnvironmentObject private var appStore: AppStore
+    @Environment(\.dismiss) private var dismiss
     @State private var allowance = ""
     @State private var incomeTarget = ""
     @State private var savingsGoal = ""
@@ -207,18 +212,28 @@ private struct MonthlyPlanSettingsView: View {
         .background(DesignSystem.Colors.background)
         .platformFormLayout()
         .navigationTitle("Monthly plan")
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    save()
+                    dismiss()
+                }
+                .fontWeight(.semibold)
+            }
+        }
         .onAppear {
             allowance = stringValue(appStore.preferences?.monthlySpendingAllowance ?? .zero)
             incomeTarget = stringValue(appStore.preferences?.monthlyIncomeTarget ?? .zero)
             savingsGoal = stringValue(appStore.preferences?.monthlySavingsGoal ?? .zero)
         }
-        .onDisappear {
-            let preferences = appStore.preferences ?? appStore.makePreferences()
-            preferences.monthlySpendingAllowance = decimalValue(allowance)
-            preferences.monthlyIncomeTarget = decimalValue(incomeTarget)
-            preferences.monthlySavingsGoal = decimalValue(savingsGoal)
-            _ = appStore.save()
-        }
+    }
+
+    private func save() {
+        let preferences = appStore.preferences ?? appStore.makePreferences()
+        preferences.monthlySpendingAllowance = decimalValue(allowance)
+        preferences.monthlyIncomeTarget = decimalValue(incomeTarget)
+        preferences.monthlySavingsGoal = decimalValue(savingsGoal)
+        _ = appStore.save()
     }
 
     private var currencyCode: String { appStore.preferences?.currencyCode ?? "INR" }

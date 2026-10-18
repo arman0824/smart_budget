@@ -8,11 +8,11 @@ struct OverviewView: View {
     @Query(sort: \Subscription.nextBillingDate) private var subscriptions: [Subscription]
     @Query private var budgets: [BudgetPlan]
 
-    @State private var selectedMonth = Date()
     @State private var showSettings = false
     @State private var showTransactionForm = false
     @State private var selectedTransaction: Transaction?
 
+    private var selectedMonth: Date { appStore.selectedMonth }
     private var preferences: AppPreferences? { appStore.preferences }
     private var currencyCode: String { preferences?.currencyCode ?? "INR" }
     private var visibleCategories: [BudgetCategory] { categories.filter { !$0.isArchived } }
@@ -107,12 +107,6 @@ struct OverviewView: View {
         .sheet(isPresented: $showTransactionForm) {
             TransactionFormView(transaction: selectedTransaction)
         }
-        .onAppear {
-            selectedMonth = appStore.selectedMonth
-        }
-        .onChange(of: selectedMonth) { _, newMonth in
-            appStore.selectedMonth = newMonth
-        }
     }
 
     private var header: some View {
@@ -120,12 +114,12 @@ struct OverviewView: View {
             HStack(alignment: .bottom) {
                 headerCopy
                 Spacer(minLength: DesignSystem.Spacing.small)
-                MonthSelector(month: $selectedMonth, calendar: appStore.calendar)
+                MonthSelector(month: $appStore.selectedMonth, calendar: appStore.calendar)
             }
 
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
                 headerCopy
-                MonthSelector(month: $selectedMonth, calendar: appStore.calendar)
+                MonthSelector(month: $appStore.selectedMonth, calendar: appStore.calendar)
             }
         }
     }

@@ -45,7 +45,7 @@ struct MainTabView: View {
     var body: some View {
 #if os(macOS)
         NavigationSplitView {
-            List(selection: selectedTabBinding) {
+            List(selection: selectedSidebarTabBinding) {
                 ForEach(navigationTabs, id: \.self) { tab in
                     Label(tab.title, systemImage: tab.systemImage)
                         .tag(tab)
@@ -58,10 +58,9 @@ struct MainTabView: View {
             NavigationStack {
                 selectedSection
             }
-            .frame(minWidth: 600, maxHeight: .infinity)
         }
 #else
-        TabView(selection: $appStore.selectedTab) {
+        TabView(selection: tabSelectionBinding) {
             NavigationStack {
                 OverviewView()
             }
@@ -110,17 +109,28 @@ struct MainTabView: View {
     }
 
 #if os(macOS)
-    private var selectedTabBinding: Binding<AppTab?> {
+    private var selectedSidebarTabBinding: Binding<AppTab?> {
         Binding(
             get: { appStore.selectedTab },
             set: { selectedTab in
-                if let selectedTab {
+                if let selectedTab, selectedTab != appStore.selectedTab {
                     appStore.selectedTab = selectedTab
                 }
             }
         )
     }
 #endif
+
+    private var tabSelectionBinding: Binding<AppTab> {
+        Binding(
+            get: { appStore.selectedTab },
+            set: { selectedTab in
+                if selectedTab != appStore.selectedTab {
+                    appStore.selectedTab = selectedTab
+                }
+            }
+        )
+    }
 
     @ViewBuilder
     private var selectedSection: some View {
