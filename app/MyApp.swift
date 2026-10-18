@@ -39,8 +39,10 @@ struct MyApp: App {
                 .environmentObject(appStore)
                 .environment(\.locale, Locale(identifier: appStore.preferences?.localeIdentifier ?? "en_IN"))
                 .modelContainer(modelContainer)
-                .platformSettingsFrame()
+                .preferredColorScheme(.light)
+                .foregroundStyle(DesignSystem.Colors.primaryText)
         }
+        .defaultSize(width: 760, height: 640)
 #else
         WindowGroup {
             ContentView()

@@ -56,15 +56,6 @@ extension View {
     }
 
     @ViewBuilder
-    func platformSettingsFrame() -> some View {
-#if os(macOS)
-        self.frame(minWidth: 720, idealWidth: 780, minHeight: 540, idealHeight: 640)
-#else
-        self
-#endif
-    }
-
-    @ViewBuilder
     func platformSheetFrame(
         minWidth: CGFloat,
         idealWidth: CGFloat,

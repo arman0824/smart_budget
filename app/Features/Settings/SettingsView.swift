@@ -5,7 +5,6 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @EnvironmentObject private var appStore: AppStore
     @Environment(\.dismiss) private var dismiss
-    @Query private var preferences: [AppPreferences]
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     @Query(sort: \BudgetCategory.sortOrder) private var categories: [BudgetCategory]
 
@@ -124,6 +123,7 @@ struct SettingsView: View {
             .scrollContentBackground(.hidden)
             .background(DesignSystem.Colors.background)
             .platformFormLayout()
+            .foregroundStyle(DesignSystem.Colors.primaryText)
             .navigationTitle("Settings")
             .platformInlineNavigationTitle()
             .toolbar {
