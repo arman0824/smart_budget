@@ -1,8 +1,35 @@
-# Smart Budget & Subscription Tracker
+# Smart Budget
 
-Smart Budget & Subscription Tracker is a native SwiftUI iOS app organized
-around a local-first domain model. `ContentView` routes into onboarding or the
-five-tab finance experience.
+Smart Budget is a calm, local-first personal finance tracker for iPhone, iPad,
+and Mac. Track spending, income, budgets, subscriptions, and financial trends
+without an account or cloud backend.
+
+[Download the latest macOS release](https://github.com/arman0824/smart_budget/releases/latest)
+
+## What the app does
+
+- **Overview:** See your monthly balance, spending, income, budgets, and upcoming bills at a glance.
+- **Activity:** Record expenses, income, refunds, and transfers with categories, dates, and notes.
+- **Budgets:** Set category limits and understand how much room is left in each plan.
+- **Subscriptions:** Keep recurring bills together and see their monthly and yearly cost.
+- **Insights:** Explore spending over time, income versus spending, category totals, and useful comparisons.
+- **Quick Log on macOS:** Add a transaction from the menu bar without opening the full app.
+
+Everything is designed to be simple and private: financial records stay on the
+device in SwiftData, and there is no sign-in, tracking, analytics SDK, or
+server-side data store.
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/insights.png" alt="Smart Budget Insights dashboard on macOS" width="92%">
+</p>
+<p align="center"><em>Insights dashboard</em></p>
+
+<p align="center">
+  <img src="docs/screenshots/quick-log.png" alt="Smart Budget Quick Log menu bar window on macOS" width="420">
+</p>
+<p align="center"><em>Quick Log menu bar window</em></p>
 
 ## Architecture
 
