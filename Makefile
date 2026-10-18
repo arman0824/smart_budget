@@ -10,6 +10,7 @@ test:
 		for path in \
 			"$(PROJECT)/project.pbxproj" \
 			"app/MyApp.swift" \
+			"app/Features/QuickLog/QuickLogView.swift" \
 			"app/ContentView.swift" \
 			"app/Persistence/ModelContainerFactory.swift" \
 			"Tests/FinancialCalculatorTests.swift" \

@@ -4,7 +4,6 @@ import SwiftData
 struct TransactionFormView: View {
     @EnvironmentObject private var appStore: AppStore
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
     @Query(sort: \BudgetCategory.sortOrder) private var categories: [BudgetCategory]
 
     private let transaction: Transaction?
@@ -186,18 +185,19 @@ struct TransactionFormView: View {
             transaction.paymentMethod = paymentMethod.trimmingCharacters(in: .whitespacesAndNewlines)
             transaction.updatedAt = Date()
         } else {
-            modelContext.insert(
-                Transaction(
-                    date: date,
-                    amount: parsedAmount,
-                    merchant: trimmedMerchant,
-                    note: note.trimmingCharacters(in: .whitespacesAndNewlines),
-                    paymentMethod: paymentMethod.trimmingCharacters(in: .whitespacesAndNewlines),
-                    categoryID: kind == .expense || kind == .refund ? categoryID : nil,
-                    linkedSubscriptionID: linkedSubscriptionID,
-                    kind: kind
-                )
-            )
+            if appStore.recordTransaction(
+                date: date,
+                amount: parsedAmount,
+                merchant: trimmedMerchant,
+                note: note,
+                paymentMethod: paymentMethod,
+                categoryID: categoryID,
+                linkedSubscriptionID: linkedSubscriptionID,
+                kind: kind
+            ) != nil {
+                dismiss()
+            }
+            return
         }
 
         if appStore.save() {

@@ -125,4 +125,29 @@ final class FinancialCalculatorTests: XCTestCase {
         XCTAssertFalse(category.isArchived)
         XCTAssertTrue(store.categories.contains(where: { $0.id == category.id }))
     }
+
+    func testRecordTransactionValidatesAndPersistsQuickLogEntries() throws {
+        let container = try ModelContainerFactory.makeContainer(inMemory: true)
+        let store = AppStore(modelContext: container.mainContext, calendar: calendar)
+        let category = try XCTUnwrap(store.categories.first)
+
+        let recorded = store.recordTransaction(
+            date: month,
+            amount: Decimal(42.50),
+            merchant: "  Coffee shop  ",
+            note: "Morning coffee",
+            categoryID: category.id,
+            kind: .expense
+        )
+
+        XCTAssertNotNil(recorded)
+        XCTAssertEqual(recorded?.merchant, "Coffee shop")
+        XCTAssertEqual(recorded?.categoryID, category.id)
+        XCTAssertEqual(recorded?.kind, .expense)
+        XCTAssertEqual(try container.mainContext.fetch(FetchDescriptor<Transaction>()).count, 1)
+
+        XCTAssertNil(store.recordTransaction(amount: .zero, merchant: "Missing amount"))
+        XCTAssertNil(store.recordTransaction(amount: Decimal(10), merchant: "   "))
+        XCTAssertEqual(try container.mainContext.fetch(FetchDescriptor<Transaction>()).count, 1)
+    }
 }

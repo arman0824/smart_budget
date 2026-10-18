@@ -8,6 +8,9 @@ five-tab finance experience.
 
 - `app/MyApp.swift` creates the shared SwiftData container and
   `app/ContentView.swift` routes into the app shell.
+- On macOS, `MyApp` also exposes a native **Quick Log** menu bar item. Its
+  compact popover records an expense, income, refund, or transfer without
+  opening the main window, while sharing the same local SwiftData store.
 - `app/Models/` contains SwiftData models for transactions, categories,
   budgets, subscriptions, and preferences.
 - `app/Persistence/ModelContainerFactory.swift` defines the SwiftData schema,
@@ -54,6 +57,10 @@ CSV, and persistence bootstrap behavior in the `appTests` XCTest target.
    ```sh
    open app.xcodeproj
    ```
+
+   On macOS, look for the **plus-circle** Quick Log icon in the menu bar. Use
+   it to enter a transaction directly; **Open Smart Budget** opens the full
+   app when a longer workflow is needed.
 
 For a command-line compile smoke check for iOS, use the same developer directory:
 

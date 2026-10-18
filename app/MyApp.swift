@@ -18,13 +18,21 @@ struct MyApp: App {
 
     var body: some Scene {
 #if os(macOS)
-        WindowGroup {
+        WindowGroup(id: "main") {
             ContentView()
                 .environmentObject(appStore)
                 .environment(\.locale, Locale(identifier: appStore.preferences?.localeIdentifier ?? "en_IN"))
         }
         .modelContainer(modelContainer)
         .defaultSize(width: 1200, height: 820)
+
+        MenuBarExtra("Quick Log", systemImage: "plus.circle.fill") {
+            QuickLogView()
+                .environmentObject(appStore)
+                .environment(\.locale, Locale(identifier: appStore.preferences?.localeIdentifier ?? "en_IN"))
+                .modelContainer(modelContainer)
+        }
+        .menuBarExtraStyle(.window)
 
         Settings {
             SettingsView()

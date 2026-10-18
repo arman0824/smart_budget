@@ -71,6 +71,40 @@ final class AppStore: ObservableObject {
         }
     }
 
+    /// Creates and persists a new transaction after applying the same input
+    /// rules used by transaction entry views. A nil result means the draft was
+    /// invalid or the context could not be saved.
+    @discardableResult
+    func recordTransaction(
+        date: Date = Date(),
+        amount: Decimal,
+        merchant: String,
+        note: String = "",
+        paymentMethod: String = "",
+        categoryID: UUID? = nil,
+        linkedSubscriptionID: UUID? = nil,
+        kind: TransactionKind = .expense,
+        isSampleData: Bool = false
+    ) -> Transaction? {
+        let trimmedMerchant = merchant.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard amount > .zero, !trimmedMerchant.isEmpty else { return nil }
+
+        let transaction = Transaction(
+            date: date,
+            amount: amount,
+            merchant: trimmedMerchant,
+            note: note.trimmingCharacters(in: .whitespacesAndNewlines),
+            paymentMethod: paymentMethod.trimmingCharacters(in: .whitespacesAndNewlines),
+            categoryID: kind == .expense || kind == .refund ? categoryID : nil,
+            linkedSubscriptionID: linkedSubscriptionID,
+            kind: kind,
+            isSampleData: isSampleData
+        )
+        modelContext.insert(transaction)
+
+        return save() ? transaction : nil
+    }
+
     func clearError() {
         lastError = nil
     }
