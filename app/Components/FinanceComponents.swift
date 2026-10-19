@@ -10,38 +10,37 @@ struct MonthSelector: View {
     }
 
     var body: some View {
-        HStack(spacing: DesignSystem.Spacing.xxxSmall) {
-            Button {
-                moveMonth(by: -1)
-            } label: {
-                Image(systemName: "chevron.left")
-                    .frame(width: 30, height: 30)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Previous month")
+        GlassEffectContainer(spacing: DesignSystem.Spacing.xxxSmall) {
+            HStack(spacing: DesignSystem.Spacing.xxxSmall) {
+                Button {
+                    moveMonth(by: -1)
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .frame(width: 30, height: 30)
+                }
+                .buttonStyle(.glass(DesignSystem.Materials.interactive))
+                .accessibilityLabel("Previous month")
 
-            Text(month, format: .dateTime.month(.wide).year())
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(DesignSystem.Colors.primaryText)
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-                .frame(minWidth: 112)
+                Text(month, format: .dateTime.month(.wide).year())
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(DesignSystem.Colors.primaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                    .padding(.horizontal, DesignSystem.Spacing.xSmall)
+                    .frame(minWidth: 112)
 
-            Button {
-                moveMonth(by: 1)
-            } label: {
-                Image(systemName: "chevron.right")
-                    .frame(width: 30, height: 30)
+                Button {
+                    moveMonth(by: 1)
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .frame(width: 30, height: 30)
+                }
+                .buttonStyle(.glass(DesignSystem.Materials.interactive))
+                .accessibilityLabel("Next month")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Next month")
-        }
-        .foregroundStyle(DesignSystem.Colors.success)
-        .padding(.horizontal, DesignSystem.Spacing.xxSmall)
-        .padding(.vertical, DesignSystem.Spacing.xxxSmall)
-        .background(DesignSystem.Colors.surface, in: Capsule())
-        .overlay {
-            Capsule().stroke(DesignSystem.Colors.divider)
+            .foregroundStyle(DesignSystem.Colors.success)
+            .padding(.horizontal, DesignSystem.Spacing.xxSmall)
+            .padding(.vertical, DesignSystem.Spacing.xxxSmall)
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Selected month")
@@ -312,7 +311,7 @@ struct CategoryBudgetRow: View {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(FinancialPressButtonStyle(isInteractive: onTap != nil))
         .accessibilityHint(onTap == nil ? "" : "Double tap to edit this category budget")
     }
 }

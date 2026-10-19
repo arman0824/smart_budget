@@ -80,7 +80,7 @@ struct ActivityView: View {
             .padding(.top, DesignSystem.Spacing.small)
             .padding(.bottom, DesignSystem.Spacing.xxLarge)
         }
-        .background(DesignSystem.Colors.background.ignoresSafeArea())
+        .background(DesignSystem.Colors.canvas.ignoresSafeArea())
         .navigationTitle("Activity")
         .platformLargeNavigationTitle()
 #if os(iOS)
@@ -94,8 +94,9 @@ struct ActivityView: View {
                     selectedTransaction = nil
                     showTransactionForm = true
                 } label: {
-                    Image(systemName: "plus")
+                    Label("Add", systemImage: "plus")
                 }
+                .buttonStyle(.glassProminent)
                 .accessibilityLabel("Add transaction")
             }
         }

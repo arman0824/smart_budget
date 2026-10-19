@@ -3,7 +3,7 @@ import SwiftUI
 /// Shared visual tokens for the light financial dashboard experience.
 enum DesignSystem {
     enum Colors {
-        static let background = Color(hex: "#F7F8FA")
+        static let background = Color(hex: "#F4F7FB")
         static let surface = Color(hex: "#FFFFFF")
         static let primaryText = Color(hex: "#202733")
         static let secondaryText = Color(hex: "#747D8B")
@@ -12,7 +12,33 @@ enum DesignSystem {
         static let accent = Color(hex: "#6487CE")
         static let warning = Color(hex: "#D5A04A")
         static let danger = Color(hex: "#D96A6A")
-        static let divider = Color(hex: "#E9ECF0")
+        static let divider = Color(hex: "#E4E9F0")
+        static let canvas = LinearGradient(
+            colors: [
+                background,
+                Color(hex: "#EEF4FB")
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+
+        // Keep glass tints quiet so the system material remains the source of
+        // translucency and depth. These colors are only used to reinforce
+        // hierarchy and selected states.
+        static let glassTint = Color.white.opacity(0.46)
+        static let glassOutline = Color(hex: "#DCE4EE")
+        static let glassShadow = Color.black.opacity(0.08)
+    }
+
+    enum Materials {
+        static let regular = Glass.regular
+        static let interactive = Glass.regular.interactive()
+
+        static func tinted(_ color: Color?, interactive: Bool = false) -> Glass {
+            Glass.regular
+                .tint(color)
+                .interactive(interactive)
+        }
     }
 
     enum Spacing {
@@ -30,6 +56,7 @@ enum DesignSystem {
         static let small: CGFloat = 8
         static let medium: CGFloat = 12
         static let large: CGFloat = 16
+        static let glass: CGFloat = 20
         static let pill: CGFloat = 999
     }
 
@@ -38,6 +65,10 @@ enum DesignSystem {
         static let iconMedium: CGFloat = 40
         static let iconLarge: CGFloat = 48
         static let progressBarHeight: CGFloat = 6
+    }
+
+    enum Motion {
+        static let press = Animation.easeOut(duration: 0.15)
     }
 }
 

@@ -26,7 +26,7 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            DesignSystem.Colors.background.ignoresSafeArea()
+            DesignSystem.Colors.canvas.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 HStack {
@@ -41,6 +41,7 @@ struct OnboardingView: View {
                                 .frame(width: 44, height: 44)
                         }
                         .accessibilityLabel("Back")
+                        .buttonStyle(.glass)
                     } else {
                         Spacer().frame(width: 44)
                     }
@@ -81,7 +82,7 @@ struct OnboardingView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DesignSystem.Spacing.medium)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .tint(DesignSystem.Colors.success)
                 .padding(.horizontal, DesignSystem.Spacing.xLarge)
                 .padding(.bottom, DesignSystem.Spacing.large)
@@ -162,11 +163,11 @@ struct OnboardingView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, DesignSystem.Spacing.medium)
                     .padding(.vertical, DesignSystem.Spacing.small)
-                    .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.medium))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: DesignSystem.Radius.medium)
-                            .stroke(DesignSystem.Colors.divider)
-                    }
+                    .financialGlass(
+                        in: RoundedRectangle(cornerRadius: DesignSystem.Radius.medium, style: .continuous),
+                        tint: DesignSystem.Colors.glassTint,
+                        interactive: true
+                    )
                     .accessibilityLabel("Currency")
                 }
 

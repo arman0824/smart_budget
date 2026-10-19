@@ -124,7 +124,7 @@ struct InsightsView: View {
             .padding(.top, DesignSystem.Spacing.small)
             .padding(.bottom, DesignSystem.Spacing.xxLarge)
         }
-        .background(DesignSystem.Colors.background.ignoresSafeArea())
+        .background(DesignSystem.Colors.canvas.ignoresSafeArea())
         .navigationTitle("Insights")
         .platformLargeNavigationTitle()
     }
@@ -163,7 +163,10 @@ struct InsightsView: View {
                     title: "No net spending yet",
                     message: "Add an expense in this range to see spending by period."
                 )
-                .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
+                .financialGlass(
+                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous),
+                    tint: DesignSystem.Colors.accent.opacity(0.06)
+                )
             } else {
                 FinancialSurface {
                     Chart(spendingPoints) { point in
@@ -222,7 +225,10 @@ struct InsightsView: View {
                     title: "No cash flow yet",
                     message: "Add income or spending in this range to compare your cash flow."
                 )
-                .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
+                .financialGlass(
+                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous),
+                    tint: DesignSystem.Colors.accent.opacity(0.06)
+                )
             } else {
                 FinancialSurface {
                     VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
@@ -361,7 +367,10 @@ struct InsightsView: View {
                     title: "Insights will appear here",
                     message: "Set a category limit or add a subscription to create a useful observation."
                 )
-                .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
+                .financialGlass(
+                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous),
+                    tint: DesignSystem.Colors.accent.opacity(0.06)
+                )
             } else {
                 FinancialSurface {
                     VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {

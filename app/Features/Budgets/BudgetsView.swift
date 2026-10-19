@@ -48,7 +48,7 @@ struct BudgetsView: View {
             .padding(.top, DesignSystem.Spacing.small)
             .padding(.bottom, DesignSystem.Spacing.xxLarge)
         }
-        .background(DesignSystem.Colors.background.ignoresSafeArea())
+        .background(DesignSystem.Colors.canvas.ignoresSafeArea())
         .navigationTitle("Budgets")
         .platformLargeNavigationTitle()
         .toolbar {
@@ -67,6 +67,7 @@ struct BudgetsView: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
+                .buttonStyle(.glass)
                 .accessibilityLabel("Budget actions")
             }
         }
@@ -247,18 +248,20 @@ private struct MonthlyPlanEditorView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(DesignSystem.Colors.background)
+            .background(DesignSystem.Colors.canvas)
             .platformFormLayout()
             .navigationTitle("Monthly plan")
             .platformInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.glass)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         save()
                     }
+                    .buttonStyle(.glassProminent)
                     .fontWeight(.semibold)
                 }
             }
@@ -333,16 +336,18 @@ private struct CategoryBudgetEditorView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(DesignSystem.Colors.background)
+            .background(DesignSystem.Colors.canvas)
             .platformFormLayout()
             .navigationTitle("Category limit")
             .platformInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.glass)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
+                        .buttonStyle(.glassProminent)
                         .fontWeight(.semibold)
                 }
             }

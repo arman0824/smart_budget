@@ -132,17 +132,19 @@ struct TransactionFormView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(DesignSystem.Colors.background)
+            .background(DesignSystem.Colors.canvas)
             .platformFormLayout()
             .navigationTitle(transaction == nil ? (subscriptionToRecord == nil ? "Add transaction" : "Record charge") : "Edit transaction")
             .platformInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.glass)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
                         .disabled(!isValid)
+                        .buttonStyle(.glassProminent)
                         .fontWeight(.semibold)
                 }
             }

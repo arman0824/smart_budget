@@ -72,7 +72,7 @@ struct OverviewView: View {
             .padding(.top, DesignSystem.Spacing.small)
             .padding(.bottom, DesignSystem.Spacing.xxLarge)
         }
-        .background(DesignSystem.Colors.background.ignoresSafeArea())
+        .background(DesignSystem.Colors.canvas.ignoresSafeArea())
         .navigationTitle("Overview")
         .platformLargeNavigationTitle()
         .toolbar {
@@ -81,20 +81,23 @@ struct OverviewView: View {
                     selectedTransaction = nil
                     showTransactionForm = true
                 } label: {
-                    Image(systemName: "plus")
+                    Label("Add", systemImage: "plus")
                 }
+                .buttonStyle(.glassProminent)
                 .accessibilityLabel("Add transaction")
 #if os(macOS)
                 SettingsLink {
                     Image(systemName: "gearshape")
                         .accessibilityLabel("Settings")
                 }
+                .buttonStyle(.glass)
 #else
                 Button {
                     showSettings = true
                 } label: {
                     Image(systemName: "gearshape")
                 }
+                .buttonStyle(.glass)
                 .accessibilityLabel("Settings")
 #endif
             }
@@ -199,11 +202,10 @@ struct OverviewView: View {
             Spacer(minLength: 0)
         }
         .padding(DesignSystem.Spacing.medium)
-        .background(Color(hex: "#EEF2FC"), in: RoundedRectangle(cornerRadius: DesignSystem.Radius.medium))
-        .overlay {
-            RoundedRectangle(cornerRadius: DesignSystem.Radius.medium)
-                .stroke(DesignSystem.Colors.accent.opacity(0.16))
-        }
+        .financialGlass(
+            in: RoundedRectangle(cornerRadius: DesignSystem.Radius.medium, style: .continuous),
+            tint: DesignSystem.Colors.accent.opacity(0.10)
+        )
         .accessibilityElement(children: .combine)
     }
 
@@ -223,7 +225,10 @@ struct OverviewView: View {
                     ) {
                         appStore.selectedTab = .budgets
                     }
-                    .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
+                    .financialGlass(
+                        in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous),
+                        tint: DesignSystem.Colors.accent.opacity(0.06)
+                    )
                 } else {
                     FinancialSurface(padding: EdgeInsets(top: 8, leading: DesignSystem.Spacing.medium, bottom: 8, trailing: DesignSystem.Spacing.medium)) {
                         ForEach(topCategories) { item in
@@ -284,7 +289,10 @@ struct OverviewView: View {
                 ) {
                     showTransactionForm = true
                 }
-                .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
+                .financialGlass(
+                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous),
+                    tint: DesignSystem.Colors.accent.opacity(0.06)
+                )
             } else {
                 FinancialSurface(padding: EdgeInsets(top: 4, leading: DesignSystem.Spacing.medium, bottom: 4, trailing: DesignSystem.Spacing.medium)) {
                     ForEach(recentTransactions, id: \.id) { transaction in

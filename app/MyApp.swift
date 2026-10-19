@@ -22,6 +22,8 @@ struct MyApp: App {
             ContentView()
                 .environmentObject(appStore)
                 .environment(\.locale, Locale(identifier: appStore.preferences?.localeIdentifier ?? "en_IN"))
+                .preferredColorScheme(.light)
+                .tint(DesignSystem.Colors.success)
         }
         .modelContainer(modelContainer)
         .defaultSize(width: 1200, height: 820)
@@ -52,6 +54,8 @@ struct MyApp: App {
             ContentView()
                 .environmentObject(appStore)
                 .environment(\.locale, Locale(identifier: appStore.preferences?.localeIdentifier ?? "en_IN"))
+                .preferredColorScheme(.light)
+                .tint(DesignSystem.Colors.success)
         }
         .modelContainer(modelContainer)
 #endif

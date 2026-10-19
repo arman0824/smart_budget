@@ -94,7 +94,7 @@ struct SubscriptionsView: View {
             .padding(.top, DesignSystem.Spacing.small)
             .padding(.bottom, DesignSystem.Spacing.xxLarge)
         }
-        .background(DesignSystem.Colors.background.ignoresSafeArea())
+        .background(DesignSystem.Colors.canvas.ignoresSafeArea())
         .navigationTitle("Subscriptions")
         .platformLargeNavigationTitle()
 #if os(iOS)
@@ -108,8 +108,9 @@ struct SubscriptionsView: View {
                     selectedSubscription = nil
                     showForm = true
                 } label: {
-                    Image(systemName: "plus")
+                    Label("Add", systemImage: "plus")
                 }
+                .buttonStyle(.glassProminent)
                 .accessibilityLabel("Add subscription")
             }
         }

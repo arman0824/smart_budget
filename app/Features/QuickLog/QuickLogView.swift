@@ -193,7 +193,7 @@ struct QuickLogView: View {
             Button("Save") {
                 save()
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
             .tint(DesignSystem.Colors.success)
             .disabled(!isValid)
             .keyboardShortcut(.defaultAction)

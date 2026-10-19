@@ -32,14 +32,17 @@ struct SubscriptionDetailView: View {
                     ) {
                         showChargeForm = true
                     }
-                    .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
+                    .financialGlass(
+                        in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous),
+                        tint: DesignSystem.Colors.accent.opacity(0.06)
+                    )
                 }
             }
             .padding(.horizontal, DesignSystem.Spacing.large)
             .padding(.top, DesignSystem.Spacing.small)
             .padding(.bottom, DesignSystem.Spacing.xxLarge)
         }
-        .background(DesignSystem.Colors.background.ignoresSafeArea())
+        .background(DesignSystem.Colors.canvas.ignoresSafeArea())
         .navigationTitle(subscription.name)
         .platformInlineNavigationTitle()
         .toolbar {

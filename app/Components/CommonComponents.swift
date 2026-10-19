@@ -1,6 +1,20 @@
 import SwiftUI
 
 extension View {
+    /// Applies the system Liquid Glass material with the visual weight used
+    /// across the finance surfaces. The material, rather than a hand-rolled
+    /// blur, owns translucency, highlights, and accessibility behavior.
+    func financialGlass<S: Shape>(
+        in shape: S,
+        tint: Color? = nil,
+        interactive: Bool = false
+    ) -> some View {
+        glassEffect(
+            DesignSystem.Materials.tinted(tint, interactive: interactive),
+            in: shape
+        )
+    }
+
     @ViewBuilder
     func platformDecimalKeyboard() -> some View {
 #if os(iOS)
@@ -384,7 +398,7 @@ struct FinancialSurface<Content: View>: View {
             bottom: DesignSystem.Spacing.large,
             trailing: DesignSystem.Spacing.large
         ),
-        cornerRadius: CGFloat = DesignSystem.Radius.large,
+        cornerRadius: CGFloat = DesignSystem.Radius.glass,
         @ViewBuilder content: () -> Content
     ) {
         self.padding = padding
@@ -396,17 +410,42 @@ struct FinancialSurface<Content: View>: View {
         content
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(padding)
-            .background(
-                DesignSystem.Colors.surface,
+            .financialGlass(
                 in: RoundedRectangle(
                     cornerRadius: cornerRadius,
                     style: .continuous
-                )
+                ),
+                tint: DesignSystem.Colors.glassTint
             )
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(DesignSystem.Colors.divider, lineWidth: 1)
+                    .stroke(DesignSystem.Colors.glassOutline, lineWidth: 1)
             }
+            .shadow(
+                color: DesignSystem.Colors.glassShadow,
+                radius: DesignSystem.Spacing.medium,
+                y: DesignSystem.Spacing.xSmall
+            )
+    }
+}
+
+/// Adds a small, interruptible press response to full-width rows that cannot
+/// use a native glass button style without creating a nested surface.
+struct FinancialPressButtonStyle: ButtonStyle {
+    private let isInteractive: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    init(isInteractive: Bool = true) {
+        self.isInteractive = isInteractive
+    }
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(isInteractive && !reduceMotion && configuration.isPressed ? 0.96 : 1)
+            .animation(
+                isInteractive && !reduceMotion ? DesignSystem.Motion.press : nil,
+                value: configuration.isPressed
+            )
     }
 }
 
@@ -437,9 +476,9 @@ struct EmptyStateView: View {
                 .font(.system(size: 28, weight: .semibold))
                 .foregroundStyle(DesignSystem.Colors.accent)
                 .frame(width: DesignSystem.Size.iconLarge, height: DesignSystem.Size.iconLarge)
-                .background(
-                    DesignSystem.Colors.successSurface,
-                    in: Circle()
+                .financialGlass(
+                    in: Circle(),
+                    tint: DesignSystem.Colors.successSurface
                 )
                 .accessibilityHidden(true)
 
@@ -459,7 +498,7 @@ struct EmptyStateView: View {
 
             if let actionTitle, let action {
                 Button(actionTitle, action: action)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.glassProminent)
                     .tint(DesignSystem.Colors.accent)
             }
         }
@@ -508,23 +547,11 @@ struct FilterChip: View {
             )
             .padding(.horizontal, DesignSystem.Spacing.medium)
             .padding(.vertical, DesignSystem.Spacing.xSmall)
-            .background(
-                isSelected
-                    ? DesignSystem.Colors.successSurface
-                    : DesignSystem.Colors.surface,
-                in: Capsule(style: .continuous)
-            )
-            .overlay {
-                Capsule(style: .continuous)
-                    .stroke(
-                        isSelected
-                            ? DesignSystem.Colors.success
-                            : DesignSystem.Colors.divider,
-                        lineWidth: 1
-                    )
-            }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.glass(DesignSystem.Materials.tinted(
+            isSelected ? DesignSystem.Colors.success.opacity(0.16) : DesignSystem.Colors.glassTint,
+            interactive: true
+        )))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(title))
         .accessibilityValue(Text(isSelected ? "Selected" : "Not selected"))

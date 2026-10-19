@@ -121,7 +121,7 @@ struct SettingsView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(DesignSystem.Colors.background)
+            .background(DesignSystem.Colors.canvas)
             .platformFormLayout()
             .foregroundStyle(DesignSystem.Colors.primaryText)
             .navigationTitle("Settings")
@@ -130,6 +130,7 @@ struct SettingsView: View {
 #if os(iOS)
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.glass)
                 }
 #endif
             }
@@ -209,7 +210,7 @@ private struct MonthlyPlanSettingsView: View {
             }
         }
         .scrollContentBackground(.hidden)
-        .background(DesignSystem.Colors.background)
+        .background(DesignSystem.Colors.canvas)
         .platformFormLayout()
         .navigationTitle("Monthly plan")
         .toolbar {
@@ -218,6 +219,7 @@ private struct MonthlyPlanSettingsView: View {
                     save()
                     dismiss()
                 }
+                .buttonStyle(.glassProminent)
                 .fontWeight(.semibold)
             }
         }

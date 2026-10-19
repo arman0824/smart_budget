@@ -159,17 +159,19 @@ struct SubscriptionFormView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(DesignSystem.Colors.background)
+            .background(DesignSystem.Colors.canvas)
             .platformFormLayout()
             .navigationTitle(subscription == nil ? "Add subscription" : "Edit subscription")
             .platformInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.glass)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
                         .disabled(!isValid)
+                        .buttonStyle(.glassProminent)
                         .fontWeight(.semibold)
                 }
             }
