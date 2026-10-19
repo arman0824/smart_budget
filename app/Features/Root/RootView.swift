@@ -119,11 +119,12 @@ struct MainTabView: View {
             }
             .listStyle(.sidebar)
             .scrollContentBackground(.hidden)
-            .background(DesignSystem.Colors.background.opacity(0.62))
+            .tint(DesignSystem.Colors.success)
+            .background(DesignSystem.Colors.surfaceSubtle)
 
             sidebarFooter
         }
-        .background(DesignSystem.Colors.background.opacity(0.72))
+        .background(DesignSystem.Colors.surfaceSubtle)
         .navigationSplitViewColumnWidth(min: 210, ideal: 240, max: 300)
     }
 
@@ -152,7 +153,12 @@ struct MainTabView: View {
             .padding(.horizontal, DesignSystem.Spacing.small)
             .padding(.vertical, DesignSystem.Spacing.xSmall)
         }
-        .buttonStyle(.glass(DesignSystem.Materials.tinted(DesignSystem.Colors.success.opacity(0.12), interactive: true)))
+        .buttonStyle(.plain)
+        .background(DesignSystem.Colors.successSurface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.medium, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.medium, style: .continuous)
+                .stroke(DesignSystem.Colors.success.opacity(0.14), lineWidth: 1)
+        }
         .padding(.horizontal, DesignSystem.Spacing.small)
         .padding(.top, DesignSystem.Spacing.small)
         .padding(.bottom, DesignSystem.Spacing.xSmall)
@@ -185,10 +191,11 @@ struct MainTabView: View {
         }
         .padding(.horizontal, DesignSystem.Spacing.small)
         .padding(.vertical, DesignSystem.Spacing.small)
-        .financialGlass(
-            in: RoundedRectangle(cornerRadius: DesignSystem.Radius.medium, style: .continuous),
-            tint: DesignSystem.Colors.accent.opacity(0.08)
-        )
+        .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.medium, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.medium, style: .continuous)
+                .stroke(DesignSystem.Colors.divider, lineWidth: 1)
+        }
         .padding(.horizontal, DesignSystem.Spacing.small)
         .padding(.bottom, DesignSystem.Spacing.small)
     }

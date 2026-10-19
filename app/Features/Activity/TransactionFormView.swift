@@ -131,9 +131,7 @@ struct TransactionFormView: View {
                     }
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(DesignSystem.Colors.canvas)
-            .platformFormLayout()
+            .financialFormSurface()
             .navigationTitle(transaction == nil ? (subscriptionToRecord == nil ? "Add transaction" : "Record charge") : "Edit transaction")
             .platformInlineNavigationTitle()
             .toolbar {

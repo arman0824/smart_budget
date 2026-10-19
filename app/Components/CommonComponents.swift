@@ -100,6 +100,16 @@ extension View {
     }
 
     @ViewBuilder
+    func financialFormSurface() -> some View {
+        self
+            .scrollContentBackground(.hidden)
+            .background(DesignSystem.Colors.canvas)
+            .listRowBackground(DesignSystem.Colors.surface)
+            .platformFormLayout()
+            .foregroundStyle(DesignSystem.Colors.primaryText)
+    }
+
+    @ViewBuilder
     func platformMultilineField(minHeight: CGFloat = 72) -> some View {
 #if os(macOS)
         self.frame(minHeight: minHeight)

@@ -121,16 +121,15 @@ struct QuickLogView: View {
                         .focused($focusedField, equals: .note)
                 }
             }
-            .formStyle(.grouped)
-            .scrollContentBackground(.hidden)
-            .frame(height: 430)
+            .financialFormSurface()
+            .frame(minHeight: 430, idealHeight: 500, maxHeight: 620)
 
             Divider()
 
             footerActions
         }
-        .frame(width: 380)
-        .background(DesignSystem.Colors.background)
+        .frame(width: 400)
+        .background(DesignSystem.Colors.canvas)
         .onAppear {
             Task { @MainActor in
                 await Task.yield()
@@ -181,7 +180,7 @@ struct QuickLogView: View {
                     dismiss()
                 }
             }
-            .buttonStyle(.link)
+            .buttonStyle(.bordered)
 
             Spacer(minLength: DesignSystem.Spacing.small)
 
@@ -193,7 +192,7 @@ struct QuickLogView: View {
             Button("Save") {
                 save()
             }
-            .buttonStyle(.glassProminent)
+            .buttonStyle(.borderedProminent)
             .tint(DesignSystem.Colors.success)
             .disabled(!isValid)
             .keyboardShortcut(.defaultAction)

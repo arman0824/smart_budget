@@ -120,10 +120,7 @@ struct SettingsView: View {
                     LabeledContent("Supported", value: supportedPlatformText)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(DesignSystem.Colors.canvas)
-            .platformFormLayout()
-            .foregroundStyle(DesignSystem.Colors.primaryText)
+            .financialFormSurface()
             .navigationTitle("Settings")
             .platformInlineNavigationTitle()
             .toolbar {
@@ -209,9 +206,7 @@ private struct MonthlyPlanSettingsView: View {
                 Text("These values are stored locally and used by the Overview and Budgets screens. Income does not increase your spending allowance automatically.")
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(DesignSystem.Colors.canvas)
-        .platformFormLayout()
+        .financialFormSurface()
         .navigationTitle("Monthly plan")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
@@ -494,9 +489,7 @@ private struct CategoryEditorView: View {
                     }
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(DesignSystem.Colors.background)
-            .platformFormLayout()
+            .financialFormSurface()
             .navigationTitle(category == nil ? "New category" : "Edit category")
             .platformInlineNavigationTitle()
             .toolbar {

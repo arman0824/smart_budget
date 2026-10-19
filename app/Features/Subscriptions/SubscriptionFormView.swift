@@ -158,9 +158,7 @@ struct SubscriptionFormView: View {
                     }
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(DesignSystem.Colors.canvas)
-            .platformFormLayout()
+            .financialFormSurface()
             .navigationTitle(subscription == nil ? "Add subscription" : "Edit subscription")
             .platformInlineNavigationTitle()
             .toolbar {

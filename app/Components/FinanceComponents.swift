@@ -10,38 +10,41 @@ struct MonthSelector: View {
     }
 
     var body: some View {
-        GlassEffectContainer(spacing: DesignSystem.Spacing.xxxSmall) {
-            HStack(spacing: DesignSystem.Spacing.xxxSmall) {
-                Button {
-                    moveMonth(by: -1)
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .frame(width: 30, height: 30)
-                }
-                .buttonStyle(.glass(DesignSystem.Materials.interactive))
-                .accessibilityLabel("Previous month")
-
-                Text(month, format: .dateTime.month(.wide).year())
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(DesignSystem.Colors.primaryText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
-                    .padding(.horizontal, DesignSystem.Spacing.xSmall)
-                    .frame(minWidth: 112)
-
-                Button {
-                    moveMonth(by: 1)
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .frame(width: 30, height: 30)
-                }
-                .buttonStyle(.glass(DesignSystem.Materials.interactive))
-                .accessibilityLabel("Next month")
+        HStack(spacing: DesignSystem.Spacing.xxxSmall) {
+            Button {
+                moveMonth(by: -1)
+            } label: {
+                Image(systemName: "chevron.left")
+                    .frame(width: 30, height: 30)
             }
+            .buttonStyle(FinancialPressButtonStyle())
             .foregroundStyle(DesignSystem.Colors.success)
-            .padding(.horizontal, DesignSystem.Spacing.xxSmall)
-            .padding(.vertical, DesignSystem.Spacing.xxxSmall)
+            .background(DesignSystem.Colors.surface, in: Circle())
+            .accessibilityLabel("Previous month")
+
+            Text(month, format: .dateTime.month(.wide).year())
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(DesignSystem.Colors.primaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .padding(.horizontal, DesignSystem.Spacing.xSmall)
+                .frame(minWidth: 112)
+
+            Button {
+                moveMonth(by: 1)
+            } label: {
+                Image(systemName: "chevron.right")
+                    .frame(width: 30, height: 30)
+            }
+            .buttonStyle(FinancialPressButtonStyle())
+            .foregroundStyle(DesignSystem.Colors.success)
+            .background(DesignSystem.Colors.surface, in: Circle())
+            .accessibilityLabel("Next month")
         }
+        .padding(.horizontal, DesignSystem.Spacing.xxSmall)
+        .padding(.vertical, DesignSystem.Spacing.xxxSmall)
+        .background(DesignSystem.Colors.surfaceSubtle, in: Capsule())
+        .overlay(Capsule().stroke(DesignSystem.Colors.divider, lineWidth: 1))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Selected month")
         .accessibilityValue(Text(month, format: .dateTime.month(.wide).year()))

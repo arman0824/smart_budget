@@ -233,9 +233,7 @@ private struct MonthlyPlanEditorView: View {
                     Text("The allowance is the amount you plan to spend. Income and savings are reference goals and are never mixed into spending totals.")
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(DesignSystem.Colors.canvas)
-            .platformFormLayout()
+            .financialFormSurface()
             .navigationTitle("Monthly plan")
             .platformInlineNavigationTitle()
             .toolbar {
@@ -321,9 +319,7 @@ private struct CategoryBudgetEditorView: View {
                     }
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(DesignSystem.Colors.canvas)
-            .platformFormLayout()
+            .financialFormSurface()
             .navigationTitle("Category limit")
             .platformInlineNavigationTitle()
             .toolbar {

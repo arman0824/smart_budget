@@ -16,33 +16,28 @@ struct SubscriptionDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.large) {
-                header
-                costSurface
-                renewalSurface
-                if !relatedTransactions.isEmpty {
-                    historySection
-                } else {
-                    EmptyStateView(
-                        systemImage: "clock.arrow.circlepath",
-                        title: "No recorded charges",
-                        message: "A renewal date is only a schedule. Record a real charge when it appears in your account.",
-                        actionTitle: "Record a charge"
-                    ) {
-                        showChargeForm = true
-                    }
-                    .financialGlass(
-                        in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous),
-                        tint: DesignSystem.Colors.accent.opacity(0.06)
-                    )
+        PageScaffold {
+            header
+            costSurface
+            renewalSurface
+            if !relatedTransactions.isEmpty {
+                historySection
+            } else {
+                EmptyStateView(
+                    systemImage: "clock.arrow.circlepath",
+                    title: "No recorded charges",
+                    message: "A renewal date is only a schedule. Record a real charge when it appears in your account.",
+                    actionTitle: "Record a charge"
+                ) {
+                    showChargeForm = true
+                }
+                .background(DesignSystem.Colors.surfaceSubtle, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous)
+                        .stroke(DesignSystem.Colors.divider, lineWidth: 1)
                 }
             }
-            .padding(.horizontal, DesignSystem.Spacing.large)
-            .padding(.top, DesignSystem.Spacing.small)
-            .padding(.bottom, DesignSystem.Spacing.xxLarge)
         }
-        .background(DesignSystem.Colors.canvas.ignoresSafeArea())
         .navigationTitle(subscription.name)
         .platformInlineNavigationTitle()
         .toolbar {
