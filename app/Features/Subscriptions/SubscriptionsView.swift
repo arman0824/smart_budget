@@ -285,7 +285,7 @@ private struct SubscriptionRow: View {
             CategoryIconView(
                 systemName: "repeat",
                 color: subscription.status == .cancelled ? DesignSystem.Colors.secondaryText : DesignSystem.Colors.accent,
-                backgroundColor: subscription.status == .cancelled ? DesignSystem.Colors.divider : Color(hex: "#EEF2FC"),
+                backgroundColor: subscription.status == .cancelled ? DesignSystem.Colors.divider : DesignSystem.Colors.accentSurface,
                 size: DesignSystem.Size.iconMedium,
                 accessibilityLabel: "Subscription"
             )

@@ -163,11 +163,11 @@ struct OnboardingView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, DesignSystem.Spacing.medium)
                     .padding(.vertical, DesignSystem.Spacing.small)
-                    .financialGlass(
-                        in: RoundedRectangle(cornerRadius: DesignSystem.Radius.medium, style: .continuous),
-                        tint: DesignSystem.Colors.glassTint,
-                        interactive: true
-                    )
+                    .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.medium, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: DesignSystem.Radius.medium, style: .continuous)
+                            .stroke(DesignSystem.Colors.divider, lineWidth: 1)
+                    }
                     .accessibilityLabel("Currency")
                 }
 
@@ -208,7 +208,7 @@ struct OnboardingView: View {
                 .font(.system(size: 52, weight: .medium))
                 .foregroundStyle(DesignSystem.Colors.warning)
                 .frame(width: 112, height: 112)
-                .background(Color(hex: "#FFF8E9"), in: Circle())
+                .background(DesignSystem.Colors.warningSurface, in: Circle())
 
             VStack(spacing: DesignSystem.Spacing.small) {
                 Text("Stay ahead of renewals")

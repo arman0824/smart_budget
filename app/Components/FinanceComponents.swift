@@ -162,7 +162,7 @@ struct UpcomingPaymentRow: View {
             CategoryIconView(
                 systemName: "repeat",
                 color: DesignSystem.Colors.warning,
-                backgroundColor: Color(hex: "#FFF8E9"),
+                backgroundColor: DesignSystem.Colors.warningSurface,
                 size: DesignSystem.Size.iconMedium,
                 accessibilityLabel: "Subscription"
             )

@@ -81,7 +81,7 @@ struct SubscriptionDetailView: View {
 
     private var header: some View {
         HStack(spacing: DesignSystem.Spacing.medium) {
-            CategoryIconView(systemName: "repeat", color: DesignSystem.Colors.accent, backgroundColor: Color(hex: "#EEF2FC"), size: 64, accessibilityLabel: "Subscription")
+            CategoryIconView(systemName: "repeat", color: DesignSystem.Colors.accent, backgroundColor: DesignSystem.Colors.accentSurface, size: 64, accessibilityLabel: "Subscription")
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxxSmall) {
                 Text(subscription.merchant.isEmpty ? subscription.name : subscription.merchant)
                     .font(.title2.weight(.semibold))
