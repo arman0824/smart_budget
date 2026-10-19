@@ -140,6 +140,76 @@ extension ToolbarItemPlacement {
     }
 }
 
+struct PageScaffold<Content: View>: View {
+    private let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: DesignSystem.Layout.sectionSpacing) {
+                content
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, DesignSystem.Layout.pageHorizontalPadding)
+            .padding(.top, DesignSystem.Layout.pageTopPadding)
+            .padding(.bottom, DesignSystem.Layout.pageBottomPadding)
+            .frame(maxWidth: DesignSystem.Layout.contentMaxWidth)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollIndicators(.hidden)
+        .background(DesignSystem.Colors.canvas.ignoresSafeArea())
+    }
+}
+
+struct PageHeader<Trailing: View>: View {
+    private let eyebrow: String
+    private let title: String
+    private let trailing: Trailing
+
+    init(
+        _ eyebrow: String,
+        title: String,
+        @ViewBuilder trailing: () -> Trailing
+    ) {
+        self.eyebrow = eyebrow
+        self.title = title
+        self.trailing = trailing()
+    }
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .bottom, spacing: DesignSystem.Spacing.medium) {
+                copy
+                Spacer(minLength: DesignSystem.Spacing.small)
+                trailing
+            }
+
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
+                copy
+                trailing
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var copy: some View {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxxSmall) {
+            Text(eyebrow)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(DesignSystem.Colors.secondaryText)
+
+            Text(title)
+                .font(.system(.title2, design: .rounded).weight(.bold))
+                .foregroundStyle(DesignSystem.Colors.primaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .layoutPriority(1)
+    }
+}
+
 struct MoneyText: View {
     private let amount: Decimal
     private let currencyCode: String
@@ -387,11 +457,13 @@ struct BudgetProgressBar: View {
 }
 
 struct FinancialSurface<Content: View>: View {
+    private let style: FinancialSurfaceStyle
     private let padding: EdgeInsets
     private let cornerRadius: CGFloat
     private let content: Content
 
     init(
+        style: FinancialSurfaceStyle = .standard,
         padding: EdgeInsets = EdgeInsets(
             top: DesignSystem.Spacing.large,
             leading: DesignSystem.Spacing.large,
@@ -401,6 +473,7 @@ struct FinancialSurface<Content: View>: View {
         cornerRadius: CGFloat = DesignSystem.Radius.glass,
         @ViewBuilder content: () -> Content
     ) {
+        self.style = style
         self.padding = padding
         self.cornerRadius = max(cornerRadius, 0)
         self.content = content()
@@ -410,23 +483,34 @@ struct FinancialSurface<Content: View>: View {
         content
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(padding)
-            .financialGlass(
-                in: RoundedRectangle(
-                    cornerRadius: cornerRadius,
-                    style: .continuous
-                ),
-                tint: DesignSystem.Colors.glassTint
-            )
+            .background(surfaceColor, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(DesignSystem.Colors.glassOutline, lineWidth: 1)
             }
             .shadow(
-                color: DesignSystem.Colors.glassShadow,
-                radius: DesignSystem.Spacing.medium,
-                y: DesignSystem.Spacing.xSmall
+                color: style == .flat ? .clear : DesignSystem.Colors.glassShadow,
+                radius: style == .emphasized ? 14 : 8,
+                y: style == .emphasized ? 6 : 3
             )
     }
+
+    private var surfaceColor: Color {
+        switch style {
+        case .standard:
+            return DesignSystem.Colors.surface
+        case .emphasized:
+            return DesignSystem.Colors.surfaceElevated
+        case .flat:
+            return DesignSystem.Colors.surfaceSubtle
+        }
+    }
+}
+
+enum FinancialSurfaceStyle: Equatable {
+    case standard
+    case emphasized
+    case flat
 }
 
 /// Adds a small, interruptible press response to full-width rows that cannot
@@ -441,7 +525,7 @@ struct FinancialPressButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(isInteractive && !reduceMotion && configuration.isPressed ? 0.96 : 1)
+            .scaleEffect(isInteractive && !reduceMotion && configuration.isPressed ? 0.985 : 1)
             .animation(
                 isInteractive && !reduceMotion ? DesignSystem.Motion.press : nil,
                 value: configuration.isPressed
@@ -476,10 +560,8 @@ struct EmptyStateView: View {
                 .font(.system(size: 28, weight: .semibold))
                 .foregroundStyle(DesignSystem.Colors.accent)
                 .frame(width: DesignSystem.Size.iconLarge, height: DesignSystem.Size.iconLarge)
-                .financialGlass(
-                    in: Circle(),
-                    tint: DesignSystem.Colors.successSurface
-                )
+                .background(DesignSystem.Colors.successSurface, in: Circle())
+                .overlay(Circle().stroke(DesignSystem.Colors.success.opacity(0.12), lineWidth: 1))
                 .accessibilityHidden(true)
 
             Text(title)
@@ -548,10 +630,18 @@ struct FilterChip: View {
             .padding(.horizontal, DesignSystem.Spacing.medium)
             .padding(.vertical, DesignSystem.Spacing.xSmall)
         }
-        .buttonStyle(.glass(DesignSystem.Materials.tinted(
-            isSelected ? DesignSystem.Colors.success.opacity(0.16) : DesignSystem.Colors.glassTint,
-            interactive: true
-        )))
+        .buttonStyle(FinancialPressButtonStyle())
+        .background(
+            isSelected ? DesignSystem.Colors.successSurface : DesignSystem.Colors.surface,
+            in: Capsule()
+        )
+        .overlay {
+            Capsule()
+                .stroke(
+                    isSelected ? DesignSystem.Colors.success.opacity(0.22) : DesignSystem.Colors.divider,
+                    lineWidth: 1
+                )
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(title))
         .accessibilityValue(Text(isSelected ? "Selected" : "Not selected"))

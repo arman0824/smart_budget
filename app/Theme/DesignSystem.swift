@@ -3,20 +3,28 @@ import SwiftUI
 /// Shared visual tokens for the light financial dashboard experience.
 enum DesignSystem {
     enum Colors {
-        static let background = Color(hex: "#F4F7FB")
+        // The palette intentionally stays quiet: a warm-neutral canvas, deep
+        // ink for hierarchy, and one confident green for primary actions.
+        // Semantic colors are reserved for status, not decoration.
+        static let background = Color(hex: "#F3F7F5")
         static let surface = Color(hex: "#FFFFFF")
-        static let primaryText = Color(hex: "#202733")
-        static let secondaryText = Color(hex: "#747D8B")
-        static let success = Color(hex: "#258563")
+        static let surfaceSubtle = Color(hex: "#F8FBFA")
+        static let surfaceElevated = Color(hex: "#FBFCFF")
+        static let primaryText = Color(hex: "#1F2A2A")
+        static let secondaryText = Color(hex: "#687777")
+        static let success = Color(hex: "#1D7A59")
         static let successSurface = Color(hex: "#E8F4EE")
-        static let accent = Color(hex: "#6487CE")
-        static let warning = Color(hex: "#D5A04A")
-        static let danger = Color(hex: "#D96A6A")
-        static let divider = Color(hex: "#E4E9F0")
+        static let accent = Color(hex: "#496DAA")
+        static let accentSurface = Color(hex: "#EDF2FB")
+        static let warning = Color(hex: "#B7791F")
+        static let warningSurface = Color(hex: "#FFF6E6")
+        static let danger = Color(hex: "#C85656")
+        static let dangerSurface = Color(hex: "#FDEEEE")
+        static let divider = Color(hex: "#E1E9E5")
         static let canvas = LinearGradient(
             colors: [
                 background,
-                Color(hex: "#EEF4FB")
+                Color(hex: "#EEF4FA")
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -25,9 +33,9 @@ enum DesignSystem {
         // Keep glass tints quiet so the system material remains the source of
         // translucency and depth. These colors are only used to reinforce
         // hierarchy and selected states.
-        static let glassTint = Color.white.opacity(0.46)
-        static let glassOutline = Color(hex: "#DCE4EE")
-        static let glassShadow = Color.black.opacity(0.08)
+        static let glassTint = Color.white.opacity(0.70)
+        static let glassOutline = Color(hex: "#D8E4DE")
+        static let glassShadow = Color.black.opacity(0.06)
     }
 
     enum Materials {
@@ -64,11 +72,19 @@ enum DesignSystem {
         static let iconSmall: CGFloat = 32
         static let iconMedium: CGFloat = 40
         static let iconLarge: CGFloat = 48
-        static let progressBarHeight: CGFloat = 6
+        static let progressBarHeight: CGFloat = 7
+    }
+
+    enum Layout {
+        static let contentMaxWidth: CGFloat = 1_060
+        static let pageHorizontalPadding: CGFloat = 24
+        static let pageTopPadding: CGFloat = 12
+        static let pageBottomPadding: CGFloat = 36
+        static let sectionSpacing: CGFloat = 24
     }
 
     enum Motion {
-        static let press = Animation.easeOut(duration: 0.15)
+        static let press = Animation.easeOut(duration: 0.14)
     }
 }
 
