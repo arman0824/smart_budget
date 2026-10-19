@@ -14,6 +14,9 @@ struct InsightsView: View {
     private var selectedMonth: Date { appStore.selectedMonth }
     private var currencyCode: String { appStore.preferences?.currencyCode ?? "INR" }
     private var categoryNames: [UUID: String] { Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0.name) }) }
+    private var categoryByID: [UUID: BudgetCategory] {
+        Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0) })
+    }
     private var interval: DateInterval? { range.interval(around: selectedMonth, calendar: appStore.calendar) }
     private var rangeTransactions: [Transaction] {
         guard let interval else { return [] }
@@ -110,47 +113,49 @@ struct InsightsView: View {
     }
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: DesignSystem.Spacing.large) {
-                header
-                rangePicker
+        PageScaffold {
+            pageHeader
+            rangePicker
+#if os(macOS)
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible(minimum: 300), spacing: DesignSystem.Spacing.large),
+                    GridItem(.flexible(minimum: 300), spacing: DesignSystem.Spacing.large)
+                ],
+                alignment: .leading,
+                spacing: DesignSystem.Spacing.large
+            ) {
                 spendingChart
                 incomeSpendingChart
-                categoryChart
-                comparisonSurface
-                insightsSection
             }
-            .padding(.horizontal, DesignSystem.Spacing.large)
-            .padding(.top, DesignSystem.Spacing.small)
-            .padding(.bottom, DesignSystem.Spacing.xxLarge)
+#else
+            spendingChart
+            incomeSpendingChart
+#endif
+            categoryChart
+            comparisonSurface
+            insightsSection
         }
-        .background(DesignSystem.Colors.canvas.ignoresSafeArea())
         .navigationTitle("Insights")
         .platformLargeNavigationTitle()
     }
 
-    private var header: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxxSmall) {
-                Text("Patterns, not noise")
-                    .font(.subheadline)
-                    .foregroundStyle(DesignSystem.Colors.secondaryText)
-                Text("Your financial picture")
-                    .font(.title3.weight(.semibold))
-            }
-            Spacer()
+    private var pageHeader: some View {
+        PageHeader("Patterns, not noise", title: "Your financial picture") {
             MonthSelector(month: $appStore.selectedMonth, calendar: appStore.calendar)
         }
     }
 
     private var rangePicker: some View {
-        Picker("Insights range", selection: $range) {
-            ForEach(InsightRange.allCases) { range in
-                Text(range.title).tag(range)
+        FinancialSurface(style: .flat, padding: EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)) {
+            Picker("Insights range", selection: $range) {
+                ForEach(InsightRange.allCases) { range in
+                    Text(range.title).tag(range)
+                }
             }
+            .pickerStyle(.segmented)
+            .controlSize(.large)
         }
-        .pickerStyle(.segmented)
-        .controlSize(.large)
     }
 
     @ViewBuilder
@@ -163,10 +168,11 @@ struct InsightsView: View {
                     title: "No net spending yet",
                     message: "Add an expense in this range to see spending by period."
                 )
-                .financialGlass(
-                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous),
-                    tint: DesignSystem.Colors.accent.opacity(0.06)
-                )
+                .background(DesignSystem.Colors.surfaceSubtle, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous)
+                        .stroke(DesignSystem.Colors.divider, lineWidth: 1)
+                }
             } else {
                 FinancialSurface {
                     Chart(spendingPoints) { point in
@@ -186,7 +192,7 @@ struct InsightsView: View {
                                 .foregroundStyle(DesignSystem.Colors.divider)
                             AxisValueLabel(anchor: .leading) {
                                 if let amount = value.as(Double.self) {
-                                    Text(MoneyTextValue.string(decimalValue(from: amount), currencyCode: currencyCode))
+                                    Text(MoneyTextValue.compactString(decimalValue(from: amount), currencyCode: currencyCode))
                                         .font(.caption2)
                                 }
                             }
@@ -206,7 +212,7 @@ struct InsightsView: View {
                             .font(.caption2)
                         }
                     }
-                    .frame(height: 224)
+                    .frame(height: 196)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(Text("Spending chart for \(range.title.lowercased())"))
                     .accessibilityValue(Text(chartAccessibilitySummary))
@@ -225,10 +231,11 @@ struct InsightsView: View {
                     title: "No cash flow yet",
                     message: "Add income or spending in this range to compare your cash flow."
                 )
-                .financialGlass(
-                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous),
-                    tint: DesignSystem.Colors.accent.opacity(0.06)
-                )
+                .background(DesignSystem.Colors.surfaceSubtle, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous)
+                        .stroke(DesignSystem.Colors.divider, lineWidth: 1)
+                }
             } else {
                 FinancialSurface {
                     VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
@@ -257,7 +264,7 @@ struct InsightsView: View {
                                     .foregroundStyle(DesignSystem.Colors.divider)
                                 AxisValueLabel(anchor: .leading) {
                                     if let amount = value.as(Double.self) {
-                                        Text(MoneyTextValue.string(decimalValue(from: amount), currencyCode: currencyCode))
+                                        Text(MoneyTextValue.compactString(decimalValue(from: amount), currencyCode: currencyCode))
                                             .font(.caption2)
                                     }
                                 }
@@ -277,7 +284,7 @@ struct InsightsView: View {
                                 .font(.caption2)
                             }
                         }
-                        .frame(height: 230)
+                        .frame(height: 202)
                         .accessibilityLabel("Income versus spending chart")
                         .accessibilityValue(Text(cashFlowAccessibilitySummary))
                     }
@@ -301,7 +308,7 @@ struct InsightsView: View {
                         .foregroundStyle(Color(hex: value.colorHex))
                         .cornerRadius(4)
                         .annotation(position: .trailing, alignment: .center) {
-                            Text(MoneyTextValue.string(value.amount, currencyCode: currencyCode))
+                            Text(MoneyTextValue.compactString(value.amount, currencyCode: currencyCode))
                                 .font(.caption2.weight(.medium))
                                 .foregroundStyle(DesignSystem.Colors.secondaryText)
                         }
@@ -313,7 +320,7 @@ struct InsightsView: View {
                             AxisValueLabel(anchor: .leading)
                         }
                     }
-                    .frame(height: CGFloat(max(160, values.count * 42)))
+                    .frame(height: CGFloat(max(148, values.count * 38)))
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("Spending by category")
                     .accessibilityValue(Text(categoryAccessibilitySummary))
@@ -367,10 +374,11 @@ struct InsightsView: View {
                     title: "Insights will appear here",
                     message: "Set a category limit or add a subscription to create a useful observation."
                 )
-                .financialGlass(
-                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous),
-                    tint: DesignSystem.Colors.accent.opacity(0.06)
-                )
+                .background(DesignSystem.Colors.surfaceSubtle, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous)
+                        .stroke(DesignSystem.Colors.divider, lineWidth: 1)
+                }
             } else {
                 FinancialSurface {
                     VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
@@ -395,7 +403,7 @@ struct InsightsView: View {
         return totals
             .filter { $0.value > .zero }
             .compactMap { categoryID, amount in
-                guard let category = categories.first(where: { $0.id == categoryID }) else { return nil }
+                guard let category = categoryByID[categoryID] else { return nil }
                 return CategoryChartValue(id: category.id, name: category.name, amount: amount, colorHex: category.colorHex)
             }
             .sorted { $0.amount > $1.amount }

@@ -57,22 +57,16 @@ struct OverviewView: View {
     }
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: DesignSystem.Spacing.large) {
-                header
-                if preferences?.hasSampleData == true {
-                    sampleDataBanner
-                }
-                summarySurface
-                budgetHealth
-                upcomingSection
-                recentSection
+        PageScaffold {
+            pageHeader
+            if preferences?.hasSampleData == true {
+                sampleDataBanner
             }
-            .padding(.horizontal, DesignSystem.Spacing.large)
-            .padding(.top, DesignSystem.Spacing.small)
-            .padding(.bottom, DesignSystem.Spacing.xxLarge)
+            summarySurface
+            budgetHealth
+            upcomingSection
+            recentSection
         }
-        .background(DesignSystem.Colors.canvas.ignoresSafeArea())
         .navigationTitle("Overview")
         .platformLargeNavigationTitle()
         .toolbar {
@@ -112,34 +106,14 @@ struct OverviewView: View {
         }
     }
 
-    private var header: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .bottom) {
-                headerCopy
-                Spacer(minLength: DesignSystem.Spacing.small)
-                MonthSelector(month: $appStore.selectedMonth, calendar: appStore.calendar)
-            }
-
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
-                headerCopy
-                MonthSelector(month: $appStore.selectedMonth, calendar: appStore.calendar)
-            }
-        }
-    }
-
-    private var headerCopy: some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxxSmall) {
-            Text("Good \(greeting)")
-                .font(.subheadline)
-                .foregroundStyle(DesignSystem.Colors.secondaryText)
-            Text("A calm view of today")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(DesignSystem.Colors.primaryText)
+    private var pageHeader: some View {
+        PageHeader("Good \(greeting)", title: "A calm view of today") {
+            MonthSelector(month: $appStore.selectedMonth, calendar: appStore.calendar)
         }
     }
 
     private var summarySurface: some View {
-        FinancialSurface(cornerRadius: 24) {
+        FinancialSurface(style: .emphasized, cornerRadius: 24) {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.large) {
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxxSmall) {
@@ -202,10 +176,11 @@ struct OverviewView: View {
             Spacer(minLength: 0)
         }
         .padding(DesignSystem.Spacing.medium)
-        .financialGlass(
-            in: RoundedRectangle(cornerRadius: DesignSystem.Radius.medium, style: .continuous),
-            tint: DesignSystem.Colors.accent.opacity(0.10)
-        )
+        .background(DesignSystem.Colors.accentSurface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.medium, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: DesignSystem.Radius.medium, style: .continuous)
+                .stroke(DesignSystem.Colors.accent.opacity(0.16), lineWidth: 1)
+        }
         .accessibilityElement(children: .combine)
     }
 
@@ -225,10 +200,11 @@ struct OverviewView: View {
                     ) {
                         appStore.selectedTab = .budgets
                     }
-                    .financialGlass(
-                        in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous),
-                        tint: DesignSystem.Colors.accent.opacity(0.06)
-                    )
+                    .background(DesignSystem.Colors.surfaceSubtle, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous)
+                            .stroke(DesignSystem.Colors.divider, lineWidth: 1)
+                    }
                 } else {
                     FinancialSurface(padding: EdgeInsets(top: 8, leading: DesignSystem.Spacing.medium, bottom: 8, trailing: DesignSystem.Spacing.medium)) {
                         ForEach(topCategories) { item in
@@ -289,10 +265,11 @@ struct OverviewView: View {
                 ) {
                     showTransactionForm = true
                 }
-                .financialGlass(
-                    in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous),
-                    tint: DesignSystem.Colors.accent.opacity(0.06)
-                )
+                .background(DesignSystem.Colors.surfaceSubtle, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: DesignSystem.Radius.glass, style: .continuous)
+                        .stroke(DesignSystem.Colors.divider, lineWidth: 1)
+                }
             } else {
                 FinancialSurface(padding: EdgeInsets(top: 4, leading: DesignSystem.Spacing.medium, bottom: 4, trailing: DesignSystem.Spacing.medium)) {
                     ForEach(recentTransactions, id: \.id) { transaction in

@@ -84,17 +84,12 @@ struct SubscriptionsView: View {
     }
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: DesignSystem.Spacing.large) {
-                summarySurface
-                filterBar
-                subscriptionContent
-            }
-            .padding(.horizontal, DesignSystem.Spacing.large)
-            .padding(.top, DesignSystem.Spacing.small)
-            .padding(.bottom, DesignSystem.Spacing.xxLarge)
+        PageScaffold {
+            pageHeader
+            summarySurface
+            filterBar
+            subscriptionContent
         }
-        .background(DesignSystem.Colors.canvas.ignoresSafeArea())
         .navigationTitle("Subscriptions")
         .platformLargeNavigationTitle()
 #if os(iOS)
@@ -119,64 +114,64 @@ struct SubscriptionsView: View {
         }
     }
 
+    private var pageHeader: some View {
+        PageHeader("Recurring commitments", title: "Stay ahead of renewals")
+    }
+
     private var summarySurface: some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxxSmall) {
-                    Text("Recurring cost")
-                        .font(.subheadline)
-                        .foregroundStyle(DesignSystem.Colors.secondaryText)
-                    MoneyText(monthlyCost, currencyCode: currencyCode, font: .system(size: 30, design: .rounded).monospacedDigit().weight(.semibold))
+        FinancialSurface(style: .emphasized) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxxSmall) {
+                        Text("Recurring cost")
+                            .font(.subheadline)
+                            .foregroundStyle(DesignSystem.Colors.secondaryText)
+                        MoneyText(monthlyCost, currencyCode: currencyCode, font: .system(size: 30, design: .rounded).monospacedDigit().weight(.semibold))
 #if os(macOS)
-                        .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
 #endif
-                    Text("monthly equivalent")
-                        .font(.caption)
+                        Text("monthly equivalent")
+                            .font(.caption)
+                            .foregroundStyle(DesignSystem.Colors.secondaryText)
+                    }
+#if os(macOS)
+                    .layoutPriority(1)
+#endif
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: DesignSystem.Spacing.xxxSmall) {
+                        Text("Annualized")
+                            .font(.caption)
+                            .foregroundStyle(DesignSystem.Colors.secondaryText)
+                        MoneyText(annualCost, currencyCode: currencyCode, font: .subheadline.monospacedDigit().weight(.semibold))
+#if os(macOS)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+#endif
+                        Text("\(activeSubscriptions.count) active")
+                            .font(.caption)
+                            .foregroundStyle(DesignSystem.Colors.secondaryText)
+                    }
+#if os(macOS)
+                    .frame(minWidth: 96, alignment: .trailing)
+                    .layoutPriority(2)
+#endif
+                }
+
+                Divider().overlay(DesignSystem.Colors.divider)
+
+                HStack(spacing: DesignSystem.Spacing.large) {
+                    SummaryMetric(title: "Due in 30 days", value: "\(upcomingPayments.count)", tint: DesignSystem.Colors.warning)
+                    SummaryMetric(title: "Trials ending soon", value: "\(trialsEndingSoon.count)", tint: DesignSystem.Colors.accent)
+                    Spacer()
+                }
+
+                if subscriptions.contains(where: { $0.currencyCode != currencyCode && $0.status == .active }) {
+                    Text("The recurring total includes active subscriptions billed in \(currencyCode). Other currencies are shown on their detail screens.")
+                        .font(.footnote)
                         .foregroundStyle(DesignSystem.Colors.secondaryText)
                 }
-#if os(macOS)
-                .layoutPriority(1)
-#endif
-                Spacer()
-                VStack(alignment: .trailing, spacing: DesignSystem.Spacing.xxxSmall) {
-                    Text("Annualized")
-                        .font(.caption)
-                        .foregroundStyle(DesignSystem.Colors.secondaryText)
-                    MoneyText(annualCost, currencyCode: currencyCode, font: .subheadline.monospacedDigit().weight(.semibold))
-#if os(macOS)
-                        .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
-#endif
-                    Text("\(activeSubscriptions.count) active")
-                        .font(.caption)
-                        .foregroundStyle(DesignSystem.Colors.secondaryText)
-                }
-#if os(macOS)
-                .frame(minWidth: 96, alignment: .trailing)
-                .layoutPriority(2)
-#endif
             }
-
-            Divider().overlay(DesignSystem.Colors.divider)
-
-            HStack(spacing: DesignSystem.Spacing.large) {
-                SummaryMetric(title: "Due in 30 days", value: "\(upcomingPayments.count)", tint: DesignSystem.Colors.warning)
-                SummaryMetric(title: "Trials ending soon", value: "\(trialsEndingSoon.count)", tint: DesignSystem.Colors.accent)
-                Spacer()
-            }
-
-            if subscriptions.contains(where: { $0.currencyCode != currencyCode && $0.status == .active }) {
-                Text("The recurring total includes active subscriptions billed in \(currencyCode). Other currencies are shown on their detail screens.")
-                    .font(.footnote)
-                    .foregroundStyle(DesignSystem.Colors.secondaryText)
-            }
-        }
-        .padding(DesignSystem.Spacing.large)
-        .background(DesignSystem.Colors.successSurface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(DesignSystem.Colors.success.opacity(0.18))
         }
     }
 

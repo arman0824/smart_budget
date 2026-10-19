@@ -26,6 +26,10 @@ struct ActivityView: View {
         }
     }
 
+    private var categoryByID: [UUID: BudgetCategory] {
+        Dictionary(uniqueKeysWithValues: visibleCategories.map { ($0.id, $0) })
+    }
+
     private var filteredTransactions: [Transaction] {
         transactions
             .filter { transaction in
@@ -38,7 +42,7 @@ struct ActivityView: View {
                 }
                 if let categoryFilter, transaction.categoryID != categoryFilter { return false }
                 guard !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return true }
-                let categoryName = visibleCategories.first(where: { $0.id == transaction.categoryID })?.name ?? ""
+                let categoryName = transaction.categoryID.flatMap { categoryByID[$0]?.name } ?? ""
                 let query = searchText.lowercased()
                 return transaction.merchant.lowercased().contains(query)
                     || transaction.note.lowercased().contains(query)
@@ -69,18 +73,12 @@ struct ActivityView: View {
     }
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: DesignSystem.Spacing.large) {
-                header
-                summarySurface
-                filterBar
-                transactionContent
-            }
-            .padding(.horizontal, DesignSystem.Spacing.large)
-            .padding(.top, DesignSystem.Spacing.small)
-            .padding(.bottom, DesignSystem.Spacing.xxLarge)
+        PageScaffold {
+            pageHeader
+            summarySurface
+            filterBar
+            transactionContent
         }
-        .background(DesignSystem.Colors.canvas.ignoresSafeArea())
         .navigationTitle("Activity")
         .platformLargeNavigationTitle()
 #if os(iOS)
@@ -105,17 +103,8 @@ struct ActivityView: View {
         }
     }
 
-    private var header: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxxSmall) {
-                Text("Money in motion")
-                    .font(.subheadline)
-                    .foregroundStyle(DesignSystem.Colors.secondaryText)
-                Text("Every entry, in one place")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(DesignSystem.Colors.primaryText)
-            }
-            Spacer()
+    private var pageHeader: some View {
+        PageHeader("Money in motion", title: "Every entry, in one place") {
             MonthSelector(month: $appStore.selectedMonth, calendar: appStore.calendar)
         }
     }
@@ -141,40 +130,42 @@ struct ActivityView: View {
     }
 
     private var filterBar: some View {
-        VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
-            Picker("Transaction type", selection: $typeFilter) {
-                ForEach(ActivityTypeFilter.allCases) { filter in
-                    Text(filter.title).tag(filter)
+        FinancialSurface(style: .flat, padding: EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12)) {
+            VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
+                Picker("Transaction type", selection: $typeFilter) {
+                    ForEach(ActivityTypeFilter.allCases) { filter in
+                        Text(filter.title).tag(filter)
+                    }
                 }
-            }
-            .pickerStyle(.segmented)
+                .pickerStyle(.segmented)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: DesignSystem.Spacing.small) {
-                    FilterChip(title: categoryFilterTitle, isSelected: categoryFilter != nil, systemImage: "line.3.horizontal.decrease") {
-                        showFilters = true
-                    }
-                    FilterChip(title: sortOrder.title, systemImage: "arrow.up.arrow.down") {
-                        sortOrder = sortOrder == .date ? .amount : .date
-                    }
-                    if categoryFilter != nil || !searchText.isEmpty {
-                        Button("Clear") {
-                            categoryFilter = nil
-                            searchText = ""
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: DesignSystem.Spacing.small) {
+                        FilterChip(title: categoryFilterTitle, isSelected: categoryFilter != nil, systemImage: "line.3.horizontal.decrease") {
+                            showFilters = true
                         }
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(DesignSystem.Colors.success)
+                        FilterChip(title: sortOrder.title, systemImage: "arrow.up.arrow.down") {
+                            sortOrder = sortOrder == .date ? .amount : .date
+                        }
+                        if categoryFilter != nil || !searchText.isEmpty {
+                            Button("Clear") {
+                                categoryFilter = nil
+                                searchText = ""
+                            }
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(DesignSystem.Colors.success)
+                        }
                     }
+                    .padding(.vertical, DesignSystem.Spacing.xxxSmall)
                 }
-                .padding(.vertical, DesignSystem.Spacing.xxxSmall)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .sheet(isPresented: $showFilters) {
-                CategoryFilterSheet(
-                    categories: visibleCategories,
-                    selection: $categoryFilter
-                )
-            }
+        }
+        .sheet(isPresented: $showFilters) {
+            CategoryFilterSheet(
+                categories: visibleCategories,
+                selection: $categoryFilter
+            )
         }
     }
 
@@ -208,7 +199,7 @@ struct ActivityView: View {
                             } label: {
                                 TransactionRow(
                                     transaction: transaction,
-                                    category: visibleCategories.first(where: { $0.id == transaction.categoryID }),
+                                    category: transaction.categoryID.flatMap { categoryByID[$0] },
                                     currencyCode: currencyCode
                                 )
                             }

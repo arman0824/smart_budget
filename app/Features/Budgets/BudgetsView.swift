@@ -37,18 +37,12 @@ struct BudgetsView: View {
     }
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: DesignSystem.Spacing.large) {
-                monthHeader
-                overviewSurface
-                categorySection
-                planningNote
-            }
-            .padding(.horizontal, DesignSystem.Spacing.large)
-            .padding(.top, DesignSystem.Spacing.small)
-            .padding(.bottom, DesignSystem.Spacing.xxLarge)
+        PageScaffold {
+            pageHeader
+            overviewSurface
+            categorySection
+            planningNote
         }
-        .background(DesignSystem.Colors.canvas.ignoresSafeArea())
         .navigationTitle("Budgets")
         .platformLargeNavigationTitle()
         .toolbar {
@@ -87,22 +81,14 @@ struct BudgetsView: View {
         }
     }
 
-    private var monthHeader: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxxSmall) {
-                Text("Give every rupee a role")
-                    .font(.subheadline)
-                    .foregroundStyle(DesignSystem.Colors.secondaryText)
-                Text("Your monthly plan")
-                    .font(.title3.weight(.semibold))
-            }
-            Spacer()
+    private var pageHeader: some View {
+        PageHeader("Give every rupee a role", title: "Your monthly plan") {
             MonthSelector(month: $appStore.selectedMonth, calendar: appStore.calendar)
         }
     }
 
     private var overviewSurface: some View {
-        FinancialSurface(cornerRadius: DesignSystem.Radius.large) {
+        FinancialSurface(style: .emphasized, cornerRadius: DesignSystem.Radius.large) {
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxxSmall) {

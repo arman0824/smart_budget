@@ -385,4 +385,32 @@ enum MoneyTextValue {
         formatter.locale = Locale(identifier: currencyCode == "INR" ? "en_IN" : Locale.current.identifier)
         return formatter.string(from: NSDecimalNumber(decimal: amount)) ?? "\(amount)"
     }
+
+    static func compactString(_ amount: Decimal, currencyCode: String) -> String {
+        let value = NSDecimalNumber(decimal: amount).doubleValue
+        let absoluteValue = abs(value)
+        let locale = Locale(identifier: currencyCode == "INR" ? "en_IN" : Locale.current.identifier)
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currencyCode
+        formatter.locale = locale
+
+        let symbol = formatter.currencySymbol ?? currencyCode
+        let scale: Double
+        let suffix: String
+
+        if absoluteValue >= 1_000_000 {
+            scale = 1_000_000
+            suffix = "M"
+        } else if absoluteValue >= 1_000 {
+            scale = 1_000
+            suffix = "k"
+        } else {
+            return string(amount, currencyCode: currencyCode)
+        }
+
+        let scaledValue = value / scale
+        let formattedValue = scaledValue.formatted(.number.precision(.fractionLength(0...1)))
+        return "\(symbol)\(formattedValue)\(suffix)"
+    }
 }

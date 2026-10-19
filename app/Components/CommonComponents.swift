@@ -210,6 +210,14 @@ struct PageHeader<Trailing: View>: View {
     }
 }
 
+extension PageHeader where Trailing == EmptyView {
+    init(_ eyebrow: String, title: String) {
+        self.init(eyebrow, title: title) {
+            EmptyView()
+        }
+    }
+}
+
 struct MoneyText: View {
     private let amount: Decimal
     private let currencyCode: String
