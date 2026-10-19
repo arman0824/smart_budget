@@ -9,7 +9,7 @@ struct InsightsView: View {
     @Query(sort: \BudgetCategory.sortOrder) private var categories: [BudgetCategory]
     @Query private var budgets: [BudgetPlan]
 
-    @State private var range: InsightRange = .month
+    @State private var range: InsightRange = .threeMonths
 
     private var selectedMonth: Date { appStore.selectedMonth }
     private var currencyCode: String { appStore.preferences?.currencyCode ?? "INR" }
@@ -18,6 +18,78 @@ struct InsightsView: View {
     private var rangeTransactions: [Transaction] {
         guard let interval else { return [] }
         return transactions.filter { $0.date >= interval.start && $0.date < interval.end }
+    }
+    private var chartGranularity: InsightChartGranularity {
+        switch range {
+        case .week, .month:
+            return .day
+        case .threeMonths, .year:
+            return .month
+        }
+    }
+    private var insightBuckets: [InsightBucket] {
+        guard let interval else { return [] }
+
+        let starts = bucketStarts(in: interval, granularity: chartGranularity)
+        return starts.map { start in
+            let nextStart = appStore.calendar.date(
+                byAdding: chartGranularity.calendarComponent,
+                value: 1,
+                to: start
+            ) ?? interval.end
+            let end = min(nextStart, interval.end)
+            let bucketTransactions = rangeTransactions.filter {
+                $0.date >= start && $0.date < end
+            }
+
+            var income = Decimal.zero
+            var expenses = Decimal.zero
+            var refunds = Decimal.zero
+
+            for transaction in bucketTransactions {
+                let amount = transaction.normalizedAmount
+                switch transaction.kind {
+                case .income:
+                    income += amount
+                case .expense:
+                    expenses += amount
+                case .refund:
+                    refunds += amount
+                case .transfer:
+                    break
+                }
+            }
+
+            return InsightBucket(
+                date: start,
+                income: income,
+                expenses: expenses,
+                refunds: refunds
+            )
+        }
+    }
+    private var spendingPoints: [SpendingPoint] {
+        insightBuckets.map {
+            SpendingPoint(
+                date: $0.date,
+                amount: $0.spending
+            )
+        }
+    }
+    private var cashFlowBars: [CashFlowBar] {
+        insightBuckets.flatMap { bucket in
+            [
+                CashFlowBar(date: bucket.date, kind: .income, amount: bucket.income),
+                CashFlowBar(date: bucket.date, kind: .spending, amount: bucket.spending)
+            ]
+        }
+    }
+    private var rangeTotals: InsightTotals {
+        InsightTotals(
+            income: insightBuckets.reduce(Decimal.zero) { $0 + $1.income },
+            expenses: insightBuckets.reduce(Decimal.zero) { $0 + $1.expenses },
+            refunds: insightBuckets.reduce(Decimal.zero) { $0 + $1.refunds }
+        )
     }
     private var currentSummary: MonthSummary {
         FinancialCalculator.monthSummary(for: selectedMonth, transactions: transactions, calendar: appStore.calendar)
@@ -78,47 +150,50 @@ struct InsightsView: View {
             }
         }
         .pickerStyle(.segmented)
+        .controlSize(.large)
     }
 
     @ViewBuilder
     private var spendingChart: some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
-            SectionHeader("Spending over time", subtitle: range.subtitle)
-            if rangeTransactions.filter({ $0.kind == .expense || $0.kind == .refund }).isEmpty {
+            SectionHeader(spendingChartTitle, subtitle: range.subtitle)
+            if !spendingPoints.contains(where: { $0.amount > .zero }) {
                 EmptyStateView(
                     systemImage: "chart.line.uptrend.xyaxis",
-                    title: "Not enough history yet",
-                    message: "Add expenses or refunds to see how spending moves over time."
+                    title: "No net spending yet",
+                    message: "Add an expense in this range to see spending by period."
                 )
                 .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
             } else {
                 FinancialSurface {
                     Chart(spendingPoints) { point in
                         BarMark(
-                            x: .value("Date", point.date, unit: range == .year ? .month : .day),
-                            y: .value("Spending", point.amount),
-                            width: .ratio(0.65)
+                            x: .value("Period", point.date, unit: chartGranularity.calendarComponent),
+                            y: .value("Spending", point.amountValue),
+                            width: .ratio(chartGranularity == .day ? 0.58 : 0.68)
                         )
                         .foregroundStyle(DesignSystem.Colors.accent.gradient)
                         .cornerRadius(3)
                     }
+                    .chartXScale(domain: insightChartDomain)
+                    .chartYScale(domain: 0...spendingYMaximum)
                     .chartYAxis {
-                        AxisMarks(position: .leading) { value in
+                        AxisMarks(position: .leading, values: .automatic(desiredCount: 5)) { value in
                             AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
                                 .foregroundStyle(DesignSystem.Colors.divider)
                             AxisValueLabel(anchor: .leading) {
-                                if let amount = value.as(Decimal.self) {
-                                    Text(MoneyTextValue.string(amount, currencyCode: currencyCode))
+                                if let amount = value.as(Double.self) {
+                                    Text(MoneyTextValue.string(decimalValue(from: amount), currencyCode: currencyCode))
                                         .font(.caption2)
                                 }
                             }
                         }
                     }
                     .chartXAxis {
-                        AxisMarks(values: .automatic(desiredCount: range == .year ? 6 : 5)) { value in
+                        AxisMarks(values: spendingAxisDates) { value in
                             AxisValueLabel(anchor: .top) {
                                 if let date = value.as(Date.self) {
-                                    if range == .year {
+                                    if chartGranularity == .month {
                                         Text(date, format: .dateTime.month(.abbreviated))
                                     } else {
                                         Text(date, format: .dateTime.day().month(.abbreviated))
@@ -128,7 +203,7 @@ struct InsightsView: View {
                             .font(.caption2)
                         }
                     }
-                    .frame(height: 210)
+                    .frame(height: 224)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(Text("Spending chart for \(range.title.lowercased())"))
                     .accessibilityValue(Text(chartAccessibilitySummary))
@@ -137,55 +212,70 @@ struct InsightsView: View {
         }
     }
 
+    @ViewBuilder
     private var incomeSpendingChart: some View {
         VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
-            SectionHeader("Income versus spending", subtitle: "Monthly cash flow")
-            FinancialSurface {
-                Chart(monthlyPoints) { point in
-                    BarMark(
-                        x: .value("Month", point.month, unit: .month),
-                        y: .value("Amount", point.income),
-                        width: .ratio(0.65)
-                    )
-                    .foregroundStyle(DesignSystem.Colors.success)
-                    .position(by: .value("Type", "Income"))
+            SectionHeader("Income versus spending", subtitle: cashFlowChartSubtitle)
+            if !cashFlowBars.contains(where: { $0.amount > .zero }) {
+                EmptyStateView(
+                    systemImage: "arrow.up.arrow.down",
+                    title: "No cash flow yet",
+                    message: "Add income or spending in this range to compare your cash flow."
+                )
+                .background(DesignSystem.Colors.surface, in: RoundedRectangle(cornerRadius: DesignSystem.Radius.large))
+            } else {
+                FinancialSurface {
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
+                        cashFlowSummary
 
-                    BarMark(
-                        x: .value("Month", point.month, unit: .month),
-                        y: .value("Amount", point.spending),
-                        width: .ratio(0.65)
-                    )
-                    .foregroundStyle(DesignSystem.Colors.accent)
-                    .position(by: .value("Type", "Spending"))
-                }
-                .chartForegroundStyleScale([
-                    "Income": DesignSystem.Colors.success,
-                    "Spending": DesignSystem.Colors.accent
-                ])
-                .chartLegend(position: .bottom, alignment: .leading)
-                .chartYAxis {
-                    AxisMarks(position: .leading) { value in
-                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5)).foregroundStyle(DesignSystem.Colors.divider)
-                        AxisValueLabel(anchor: .leading) {
-                            if let amount = value.as(Decimal.self) {
-                                Text(MoneyTextValue.string(amount, currencyCode: currencyCode))
-                                    .font(.caption2)
+                        Chart(cashFlowBars) { bar in
+                            BarMark(
+                                x: .value("Period", bar.date, unit: chartGranularity.calendarComponent),
+                                y: .value("Amount", bar.amountValue),
+                                width: .ratio(chartGranularity == .day ? 0.58 : 0.68)
+                            )
+                            .foregroundStyle(by: .value("Type", bar.kind.rawValue))
+                            .position(by: .value("Type", bar.kind.rawValue))
+                            .cornerRadius(3)
+                        }
+                        .chartForegroundStyleScale([
+                            CashFlowKind.income.rawValue: DesignSystem.Colors.success,
+                            CashFlowKind.spending.rawValue: DesignSystem.Colors.accent
+                        ])
+                        .chartXScale(domain: insightChartDomain)
+                        .chartYScale(domain: 0...cashFlowYMaximum)
+                        .chartLegend(position: .bottom, alignment: .leading)
+                        .chartYAxis {
+                            AxisMarks(position: .leading, values: .automatic(desiredCount: 5)) { value in
+                                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                                    .foregroundStyle(DesignSystem.Colors.divider)
+                                AxisValueLabel(anchor: .leading) {
+                                    if let amount = value.as(Double.self) {
+                                        Text(MoneyTextValue.string(decimalValue(from: amount), currencyCode: currencyCode))
+                                            .font(.caption2)
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-                .chartXAxis {
-                    AxisMarks(values: monthlyXAxisDates) { value in
-                        AxisValueLabel(anchor: .top) {
-                            if let date = value.as(Date.self) {
-                                Text(date, format: .dateTime.month(.abbreviated))
+                        .chartXAxis {
+                            AxisMarks(values: cashFlowAxisDates) { value in
+                                AxisValueLabel(anchor: .top) {
+                                    if let date = value.as(Date.self) {
+                                        if chartGranularity == .month {
+                                            Text(date, format: .dateTime.month(.abbreviated))
+                                        } else {
+                                            Text(date, format: .dateTime.day().month(.abbreviated))
+                                        }
+                                    }
+                                }
+                                .font(.caption2)
                             }
                         }
+                        .frame(height: 230)
+                        .accessibilityLabel("Income versus spending chart")
+                        .accessibilityValue(Text(cashFlowAccessibilitySummary))
                     }
                 }
-                .frame(height: 210)
-                .accessibilityLabel("Income versus spending chart")
-                .accessibilityValue(Text(monthlyAccessibilitySummary))
             }
         }
     }
@@ -199,7 +289,7 @@ struct InsightsView: View {
                 FinancialSurface {
                     Chart(values) { value in
                         BarMark(
-                            x: .value("Amount", value.amount),
+                            x: .value("Amount", value.amountValue),
                             y: .value("Category", value.name)
                         )
                         .foregroundStyle(Color(hex: value.colorHex))
@@ -211,6 +301,7 @@ struct InsightsView: View {
                         }
                     }
                     .chartXAxis(.hidden)
+                    .chartXScale(domain: 0...categoryChartMaximum)
                     .chartYAxis {
                         AxisMarks { _ in
                             AxisValueLabel(anchor: .leading)
@@ -286,21 +377,6 @@ struct InsightsView: View {
         }
     }
 
-    private var spendingPoints: [SpendingPoint] {
-        guard interval != nil else { return [] }
-        let grouped = Dictionary(grouping: rangeTransactions) { transaction in
-            range == .year
-                ? appStore.calendar.dateInterval(of: .month, for: transaction.date)?.start ?? transaction.date
-                : appStore.calendar.startOfDay(for: transaction.date)
-        }
-        return grouped.keys.sorted().compactMap { date in
-            let amount = (grouped[date] ?? []).reduce(Decimal.zero) { total, transaction in
-                total + transaction.budgetImpactAmount
-            }
-            return amount > .zero ? SpendingPoint(date: date, amount: amount) : nil
-        }
-    }
-
     private var categoryTotals: [CategoryChartValue] {
         var totals: [UUID: Decimal] = [:]
         for transaction in rangeTransactions {
@@ -318,27 +394,119 @@ struct InsightsView: View {
             .map { $0 }
     }
 
-    private var monthlyPoints: [MonthlyPoint] {
-        guard let interval else { return [] }
-        let start = appStore.calendar.dateInterval(of: .month, for: interval.start)?.start ?? interval.start
-        let end = interval.end
-        var dates: [Date] = []
-        var cursor = start
-        while cursor < end, dates.count < 24 {
-            dates.append(cursor)
-            guard let next = appStore.calendar.date(byAdding: .month, value: 1, to: cursor) else { break }
-            cursor = next
+    private var spendingChartTitle: String {
+        chartGranularity == .day ? "Spending by day" : "Spending by month"
+    }
+
+    private var cashFlowChartSubtitle: String {
+        chartGranularity == .day ? "Daily cash flow" : "Monthly cash flow"
+    }
+
+    private var insightChartDomain: ClosedRange<Date> {
+        guard let interval else {
+            let end = selectedMonth.addingTimeInterval(86_400)
+            return selectedMonth...end
         }
-        return dates.map { month in
-            let summary = FinancialCalculator.monthSummary(for: month, transactions: transactions, calendar: appStore.calendar)
-            return MonthlyPoint(month: month, income: summary.income, spending: summary.spending)
+        return interval.start...interval.end
+    }
+
+    private var spendingAxisDates: [Date] {
+        guard !spendingPoints.isEmpty else { return [] }
+        let lastIndex = spendingPoints.count - 1
+
+        switch chartGranularity {
+        case .day:
+            return spendingPoints.enumerated().compactMap { index, point in
+                if range == .week || index == 0 || index.isMultiple(of: 7) || index == lastIndex {
+                    return point.date
+                }
+                return nil
+            }
+        case .month:
+            return insightBuckets.enumerated().compactMap { index, bucket in
+                if range == .year && !index.isMultiple(of: 2) && index != lastIndex {
+                    return nil
+                }
+                return bucket.date
+            }
         }
     }
 
-    private var monthlyXAxisDates: [Date] {
-        monthlyPoints.enumerated().compactMap { index, point in
-            range == .year && !index.isMultiple(of: 2) ? nil : point.month
+    private var cashFlowAxisDates: [Date] {
+        spendingAxisDates
+    }
+
+    private var spendingYMaximum: Double {
+        let maximum = spendingPoints.map(\.amountValue).max() ?? 0
+        return max(maximum * 1.15, 1)
+    }
+
+    private var cashFlowYMaximum: Double {
+        let maximum = cashFlowBars.map(\.amountValue).max() ?? 0
+        return max(maximum * 1.15, 1)
+    }
+
+    private var categoryChartMaximum: Double {
+        let maximum = categoryTotals.map(\.amountValue).max() ?? 0
+        return max(maximum * 1.18, 1)
+    }
+
+    private var cashFlowSummary: some View {
+        HStack(spacing: DesignSystem.Spacing.small) {
+            cashFlowMetric(title: "Income", amount: rangeTotals.income, color: DesignSystem.Colors.success)
+            Divider()
+                .frame(height: 34)
+            cashFlowMetric(title: "Spending", amount: rangeTotals.spending, color: DesignSystem.Colors.accent)
+            Divider()
+                .frame(height: 34)
+            cashFlowMetric(
+                title: "Net",
+                amount: rangeTotals.netCashFlow,
+                color: rangeTotals.netCashFlow >= .zero ? DesignSystem.Colors.success : DesignSystem.Colors.danger
+            )
         }
+    }
+
+    private func cashFlowMetric(title: String, amount: Decimal, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxxSmall) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(DesignSystem.Colors.secondaryText)
+            MoneyText(
+                amount,
+                currencyCode: currencyCode,
+                font: .subheadline.monospacedDigit().weight(.semibold),
+                color: color
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func bucketStarts(in interval: DateInterval, granularity: InsightChartGranularity) -> [Date] {
+        let calendar = appStore.calendar
+        let firstStart: Date
+
+        switch granularity {
+        case .day:
+            firstStart = calendar.startOfDay(for: interval.start)
+        case .month:
+            firstStart = calendar.dateInterval(of: .month, for: interval.start)?.start ?? interval.start
+        }
+
+        var starts: [Date] = []
+        var cursor = firstStart
+        while cursor < interval.end {
+            starts.append(cursor)
+            guard let next = calendar.date(byAdding: granularity.calendarComponent, value: 1, to: cursor), next > cursor else {
+                break
+            }
+            cursor = next
+        }
+        return starts
+    }
+
+    private func decimalValue(from amount: Double) -> Decimal {
+        NSDecimalNumber(value: amount).decimalValue
     }
 
     private var comparisonText: String {
@@ -366,14 +534,14 @@ struct InsightsView: View {
     }
 
     private var chartAccessibilitySummary: String {
-        guard let highest = spendingPoints.max(by: { $0.amount < $1.amount }) else { return "No spending recorded" }
+        guard let highest = spendingPoints.filter({ $0.amount > .zero }).max(by: { $0.amount < $1.amount }) else {
+            return "No net spending recorded"
+        }
         return "Highest recorded spending was \(MoneyTextValue.string(highest.amount, currencyCode: currencyCode)) on \(highest.date.formatted(date: .abbreviated, time: .omitted))."
     }
 
-    private var monthlyAccessibilitySummary: String {
-        monthlyPoints.map { point in
-            "\(point.month.formatted(.dateTime.month(.abbreviated).year())), income \(MoneyTextValue.string(point.income, currencyCode: currencyCode)), spending \(MoneyTextValue.string(point.spending, currencyCode: currencyCode))"
-        }.joined(separator: ". ")
+    private var cashFlowAccessibilitySummary: String {
+        "Income \(MoneyTextValue.string(rangeTotals.income, currencyCode: currencyCode)), spending \(MoneyTextValue.string(rangeTotals.spending, currencyCode: currencyCode)), net \(MoneyTextValue.string(rangeTotals.netCashFlow, currencyCode: currencyCode))."
     }
 
     private var categoryAccessibilitySummary: String {
@@ -425,10 +593,74 @@ private enum InsightRange: String, CaseIterable, Identifiable {
     }
 }
 
+private enum InsightChartGranularity: Equatable {
+    case day
+    case month
+
+    var calendarComponent: Calendar.Component {
+        switch self {
+        case .day:
+            return .day
+        case .month:
+            return .month
+        }
+    }
+}
+
+private struct InsightBucket {
+    let date: Date
+    let income: Decimal
+    let expenses: Decimal
+    let refunds: Decimal
+
+    var spending: Decimal {
+        expenses > refunds ? expenses - refunds : .zero
+    }
+
+}
+
+private struct InsightTotals {
+    let income: Decimal
+    let expenses: Decimal
+    let refunds: Decimal
+
+    var spending: Decimal {
+        expenses > refunds ? expenses - refunds : .zero
+    }
+
+    var netCashFlow: Decimal {
+        income + refunds - expenses
+    }
+}
+
+private enum CashFlowKind: String {
+    case income = "Income"
+    case spending = "Spending"
+}
+
+private struct CashFlowBar: Identifiable {
+    let date: Date
+    let kind: CashFlowKind
+    let amount: Decimal
+
+    var id: String {
+        "\(date.timeIntervalSinceReferenceDate)-\(kind.rawValue)"
+    }
+
+    var amountValue: Double {
+        NSDecimalNumber(decimal: amount).doubleValue
+    }
+}
+
 private struct SpendingPoint: Identifiable {
     let date: Date
     let amount: Decimal
+
     var id: Date { date }
+
+    var amountValue: Double {
+        NSDecimalNumber(decimal: amount).doubleValue
+    }
 }
 
 private struct CategoryChartValue: Identifiable {
@@ -436,11 +668,8 @@ private struct CategoryChartValue: Identifiable {
     let name: String
     let amount: Decimal
     let colorHex: String
-}
 
-private struct MonthlyPoint: Identifiable {
-    let month: Date
-    let income: Decimal
-    let spending: Decimal
-    var id: Date { month }
+    var amountValue: Double {
+        NSDecimalNumber(decimal: amount).doubleValue
+    }
 }
