@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest an improvement to Smart Budget
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      placeholder: As a user, I would like … so that …
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should the app do? Rough sketches are welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you thought about, and why they are not enough.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Overview
+        - Activity
+        - Budgets
+        - Subscriptions
+        - Insights
+        - Settings / onboarding
+        - Quick Log (macOS menu bar)
+        - Design / dark mode / accessibility
+        - Other
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Privacy and offline scope
+      description: Smart Budget is local-first with no account, server, or analytics.
+      options:
+        - label: This request works without network access, an account, or third-party tracking.
+          required: false

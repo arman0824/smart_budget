@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Contributing guide
+    url: https://github.com/arman0824/smart_budget/blob/main/CONTRIBUTING.md
+    about: Build instructions, code conventions, and how to propose changes.
+  - name: Security policy
+    url: https://github.com/arman0824/smart_budget/blob/main/SECURITY.md
+    about: How to report a vulnerability privately. Do not open public issues for security problems.

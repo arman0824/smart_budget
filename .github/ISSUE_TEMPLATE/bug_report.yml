@@ -1,0 +1,61 @@
+name: Bug report
+description: Report something that is broken or renders incorrectly
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you see, and what did you expect instead?
+      placeholder: |
+        e.g. Quick Log saves ₹1,250 as ₹12,50 in en_IN locale
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the app
+        2. Go to …
+        3. Tap …
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - iPhone
+        - iPad
+        - Mac (native)
+        - Menu bar Quick Log (macOS)
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: OS version
+      placeholder: e.g. iOS 26.1 / macOS 26.1
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      description: Shown in Settings → About.
+      placeholder: e.g. 1.0
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or screen recordings
+      description: Drag and drop images here. Please redact personal financial data.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else — logs, sample data state, frequency.
