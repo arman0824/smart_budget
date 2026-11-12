@@ -1,5 +1,8 @@
 # Smart Budget
 
+[![CI](https://github.com/arman0824/smart_budget/actions/workflows/ci.yml/badge.svg)](https://github.com/arman0824/smart_budget/actions/workflows/ci.yml)
+[![Release](https://github.com/arman0824/smart_budget/actions/workflows/release.yml/badge.svg)](https://github.com/arman0824/smart_budget/actions/workflows/release.yml)
+
 Smart Budget is a calm, local-first personal finance tracker for iPhone, iPad,
 and Mac. Track spending, income, budgets, subscriptions, and financial trends
 without an account or cloud backend.
