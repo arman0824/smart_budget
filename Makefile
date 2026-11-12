@@ -19,7 +19,7 @@ test:
 			"Dockerfile"; do \
 			test -f "$$path" || { printf '%s\n' "Missing required source file: $$path" >&2; exit 1; }; \
 		done; \
-		grep -q 'IPHONEOS_DEPLOYMENT_TARGET = 27.0;' "$(PROJECT)/project.pbxproj" || { printf '%s\n' 'Expected iOS deployment target is missing.' >&2; exit 1; }; \
+		grep -q 'IPHONEOS_DEPLOYMENT_TARGET = 26.0;' "$(PROJECT)/project.pbxproj" || { printf '%s\n' 'Expected iOS deployment target is missing.' >&2; exit 1; }; \
 		grep -q 'SWIFT_VERSION = 5.0;' "$(PROJECT)/project.pbxproj" || { printf '%s\n' 'Expected Swift language version is missing.' >&2; exit 1; }; \
 		grep -q 'SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";' "$(PROJECT)/project.pbxproj" || { printf '%s\n' 'The app target must support iOS and macOS.' >&2; exit 1; }; \
 		grep -q 'TARGETED_DEVICE_FAMILY = "1,2";' "$(PROJECT)/project.pbxproj" || { printf '%s\n' 'The app target must target iPhone and iPad.' >&2; exit 1; }; \
