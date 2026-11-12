@@ -26,3 +26,4 @@ xcuserdata/
 # Optional dependency-manager output (this project currently uses none)
 Pods/
 Carthage/Build/
+*.app
