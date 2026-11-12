@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-check:
+    name: Linux source check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate repository shape
+        run: make test
+        env:
+          SOURCE_ONLY: "1"
+
+  build-and-test:
+    name: Build and test (iOS + macOS)
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain versions
+        run: |
+          sw_vers
+          xcode-select -p
+          xcodebuild -version
+          DEVELOPER_DIR="$(xcode-select -p)" xcrun simctl list runtimes || true
+      # Builds for testing on iOS Simulator, then builds and runs the
+      # XCTest suite on macOS, matching the local `make test`.
+      - name: Build and test
+        run: make test
