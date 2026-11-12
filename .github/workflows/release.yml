@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify the release build
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test
+        run: make test
+
+  release:
+    name: Build release and publish GitHub Release
+    needs: verify
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      # The app is not signed with an Apple distribution identity on CI, so
+      # the macOS result is an unsigned but fully built .app. iOS builds are
+      # compile-verified only; distributing an iPhone build requires your
+      # Apple Developer signing assets and an ExportOptions.plist.
+      - name: Archive macOS (Release, unsigned)
+        run: |
+          xcodebuild -project app.xcodeproj -scheme app -configuration Release \
+            -destination 'platform=macOS' \
+            -archivePath .build/SmartBudget-macOS.xcarchive \
+            CODE_SIGNING_ALLOWED=NO archive
+
+      - name: Archive iOS (Release, unsigned, compile check)
+        run: |
+          xcodebuild -project app.xcodeproj -scheme app -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath .build/SmartBudget-iOS.xcarchive \
+            CODE_SIGNING_ALLOWED=NO archive
+
+      - name: Package the macOS app
+        run: |
+          ditto -c -k --keepParent \
+            .build/SmartBudget-macOS.xcarchive/Products/Applications/app.app \
+            SmartBudget-macOS.zip
+          shasum -a 256 SmartBudget-macOS.zip > SmartBudget-macOS.zip.sha256
+          cat SmartBudget-macOS.zip.sha256
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            SmartBudget-macOS.zip
+            SmartBudget-macOS.zip.sha256
+          fail_on_unmatched_files: true
