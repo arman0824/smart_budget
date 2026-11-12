@@ -16,7 +16,7 @@
     { "filename" : "AppIcon-40@2x.png", "idiom" : "ipad", "scale" : "2x", "size" : "40x40" },
     { "filename" : "AppIcon-76@2x.png", "idiom" : "ipad", "scale" : "2x", "size" : "76x76" },
     { "filename" : "AppIcon-83.5@2x.png", "idiom" : "ipad", "scale" : "2x", "size" : "83.5x83.5" },
-    { "filename" : "AppIcon.png", "idiom" : "ios-marketing", "scale" : "1x", "size" : "1024x1024" },
+    { "filename" : "AppIcon-ios-1024.png", "idiom" : "ios-marketing", "scale" : "1x", "size" : "1024x1024" },
     { "filename" : "AppIcon-mac-16.png", "idiom" : "mac", "scale" : "1x", "size" : "16x16" },
     { "filename" : "AppIcon-mac-32.png", "idiom" : "mac", "scale" : "2x", "size" : "16x16" },
     { "filename" : "AppIcon-mac-32.png", "idiom" : "mac", "scale" : "1x", "size" : "32x32" },
@@ -31,8 +31,5 @@
   "info" : {
     "author" : "xcode",
     "version" : 1
-  },
-  "properties" : {
-    "pre-rendered" : true
   }
 }
