@@ -27,11 +27,11 @@ struct SubscriptionFormView: View {
 
     private let currencies = ["INR", "USD", "EUR", "GBP", "AUD", "CAD", "SGD", "JPY"]
 
-    init(subscription: Subscription? = nil) {
+    init(subscription: Subscription? = nil, locale: Locale = .current) {
         self.subscription = subscription
         _name = State(initialValue: subscription?.name ?? "")
         _merchant = State(initialValue: subscription?.merchant ?? "")
-        _amountText = State(initialValue: subscription.map { NSDecimalNumber(decimal: $0.amount).stringValue } ?? "")
+        _amountText = State(initialValue: subscription.map { AmountParser.editingString($0.amount, locale: locale) } ?? "")
         _currencyCode = State(initialValue: subscription?.currencyCode ?? "INR")
         _billingCycle = State(initialValue: subscription?.billingCycle ?? .monthly)
         _hasNextBillingDate = State(initialValue: subscription?.nextBillingDate != nil)
@@ -46,7 +46,7 @@ struct SubscriptionFormView: View {
     }
 
     private var visibleCategories: [BudgetCategory] { categories.filter { !$0.isArchived } }
-    private var amount: Decimal { Decimal(string: amountText.replacingOccurrences(of: ",", with: "")) ?? .zero }
+    private var amount: Decimal { AmountParser.decimal(from: amountText, locale: appStore.displayLocale) ?? .zero }
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var isValid: Bool {
         guard !trimmedName.isEmpty, amount > .zero else { return false }
@@ -164,12 +164,11 @@ struct SubscriptionFormView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .buttonStyle(.glass)
+                        .financialSecondaryButton()
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
-                        .disabled(!isValid)
-                        .buttonStyle(.glassProminent)
+                        .financialPrimaryButton()
                         .fontWeight(.semibold)
                 }
             }
@@ -177,7 +176,10 @@ struct SubscriptionFormView: View {
                 if newStatus != .trial {
                     hasTrialEndDate = false
                 }
+                validationMessage = nil
             }
+            .onChange(of: amountText) { _, _ in validationMessage = nil }
+            .onChange(of: name) { _, _ in validationMessage = nil }
             .confirmationDialog("Delete this subscription?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
                 Button("Delete", role: .destructive) {
                     if let subscription {

@@ -10,6 +10,7 @@ struct InsightsView: View {
     @Query private var budgets: [BudgetPlan]
 
     @State private var range: InsightRange = .threeMonths
+    @State private var showSettings = false
 
     private var selectedMonth: Date { appStore.selectedMonth }
     private var currencyCode: String { appStore.preferences?.currencyCode ?? "INR" }
@@ -108,6 +109,7 @@ struct InsightsView: View {
             budgets: budgets,
             subscriptions: subscriptions,
             categoryNames: categoryNames,
+            currencyCode: currencyCode,
             calendar: appStore.calendar
         )
     }
@@ -138,6 +140,16 @@ struct InsightsView: View {
         }
         .navigationTitle("Insights")
         .platformLargeNavigationTitle()
+        .toolbar {
+            ToolbarItem(placement: .platformTrailing) {
+                SettingsToolbarButton(isPresented: $showSettings)
+            }
+        }
+#if os(iOS)
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+        }
+#endif
     }
 
     private var pageHeader: some View {
@@ -213,6 +225,7 @@ struct InsightsView: View {
                         }
                     }
                     .frame(height: 196)
+                    .chartPlotStyle { $0.padding(.horizontal, 4) }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(Text("Spending chart for \(range.title.lowercased())"))
                     .accessibilityValue(Text(chartAccessibilitySummary))
@@ -285,6 +298,7 @@ struct InsightsView: View {
                             }
                         }
                         .frame(height: 202)
+                        .chartPlotStyle { $0.padding(.horizontal, 4) }
                         .accessibilityLabel("Income versus spending chart")
                         .accessibilityValue(Text(cashFlowAccessibilitySummary))
                     }
@@ -321,6 +335,7 @@ struct InsightsView: View {
                         }
                     }
                     .frame(height: CGFloat(max(148, values.count * 38)))
+                    .chartPlotStyle { $0.padding(.trailing, 6) }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("Spending by category")
                     .accessibilityValue(Text(categoryAccessibilitySummary))
@@ -424,7 +439,10 @@ struct InsightsView: View {
             let end = selectedMonth.addingTimeInterval(86_400)
             return selectedMonth...end
         }
-        return interval.start...interval.end
+        // A little breathing room on both ends keeps the first and last axis
+        // labels inside the plot instead of clipping at the card edge.
+        let padding: TimeInterval = chartGranularity == .day ? 12 * 60 * 60 : 7 * 24 * 60 * 60
+        return interval.start.addingTimeInterval(-padding)...interval.end.addingTimeInterval(padding)
     }
 
     private var spendingAxisDates: [Date] {
@@ -465,7 +483,8 @@ struct InsightsView: View {
 
     private var categoryChartMaximum: Double {
         let maximum = categoryTotals.map(\.amountValue).max() ?? 0
-        return max(maximum * 1.18, 1)
+        // Extra headroom leaves room for the trailing value annotation.
+        return max(maximum * 1.35, 1)
     }
 
     private var cashFlowSummary: some View {
@@ -593,8 +612,10 @@ private enum InsightRange: String, CaseIterable, Identifiable {
     func interval(around date: Date, calendar: Calendar) -> DateInterval? {
         switch self {
         case .week:
+            // A seven-day window that ends tomorrow at midnight, so "today"
+            // is included and the range spans exactly seven calendar days.
+            let start = calendar.date(byAdding: .day, value: -6, to: date) ?? date
             let end = calendar.date(byAdding: .day, value: 1, to: date) ?? date
-            let start = calendar.date(byAdding: .day, value: -6, to: end) ?? end
             return DateInterval(start: calendar.startOfDay(for: start), end: calendar.startOfDay(for: end))
         case .month:
             return calendar.dateInterval(of: .month, for: date)

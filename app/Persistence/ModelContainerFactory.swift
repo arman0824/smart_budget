@@ -26,33 +26,37 @@ public enum ModelContainerFactory {
 
     /// Seeds preferences and the default category set only. Transactions are
     /// intentionally never generated during bootstrap.
+    ///
+    /// Default categories are inserted only into a genuinely new store
+    /// (no categories at all). Seeding by "missing name" resurrects categories
+    /// the user renamed or deleted on every launch.
     public static func seedDefaults(in context: ModelContext) throws {
-        let existingCategories = try context.fetch(FetchDescriptor<BudgetCategory>())
-        let existingNames = Set(existingCategories.map { $0.name.lowercased() })
-        var insertedDefaults = false
+        var didChange = false
 
-        for (index, definition) in BudgetCategory.defaultDefinitions.enumerated()
-            where !existingNames.contains(definition.name.lowercased()) {
-            context.insert(
-                BudgetCategory(
-                    name: definition.name,
-                    iconName: definition.iconName,
-                    colorHex: definition.colorHex,
-                    kind: definition.kind,
-                    sortOrder: index,
-                    isDefault: true
+        let existingCategories = try context.fetch(FetchDescriptor<BudgetCategory>())
+        if existingCategories.isEmpty {
+            for (index, definition) in BudgetCategory.defaultDefinitions.enumerated() {
+                context.insert(
+                    BudgetCategory(
+                        name: definition.name,
+                        iconName: definition.iconName,
+                        colorHex: definition.colorHex,
+                        kind: definition.kind,
+                        sortOrder: index,
+                        isDefault: true
+                    )
                 )
-            )
-            insertedDefaults = true
+            }
+            didChange = true
         }
 
         let existingPreferences = try context.fetch(FetchDescriptor<AppPreferences>())
         if existingPreferences.isEmpty {
             context.insert(AppPreferences())
-            insertedDefaults = true
+            didChange = true
         }
 
-        if insertedDefaults {
+        if didChange {
             try context.save()
         }
     }

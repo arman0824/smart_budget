@@ -321,11 +321,17 @@ public enum FinancialCalculator {
         budgets: [BudgetPlan] = [],
         subscriptions: [Subscription] = [],
         categoryNames: [UUID: String] = [:],
+        currencyCode: String? = nil,
         includeCancelledSubscriptions: Bool = false,
         calendar: Calendar = .current
     ) -> [FinancialInsight] {
         let summary = monthSummary(for: month, transactions: transactions, calendar: calendar)
         var insights: [FinancialInsight] = []
+        let currencySuffix = currencyCode.map { " \($0)" } ?? ""
+
+        func money(_ value: Decimal) -> String {
+            decimalString(value) + currencySuffix
+        }
 
         let plansForMonth = budgets.filter {
             isSameMonth($0.monthStart, month, calendar: calendar)
@@ -337,8 +343,8 @@ public enum FinancialCalculator {
             calendar: calendar
         ) {
             let categoryName = categoryNames[status.categoryID] ?? "Category"
-            let amountText = decimalString(status.spent)
-            let limitText = decimalString(status.limit)
+            let amountText = money(status.spent)
+            let limitText = money(status.limit)
 
             if status.isOverBudget {
                 insights.append(
@@ -364,7 +370,8 @@ public enum FinancialCalculator {
         }
 
         let recurringSubscriptions = subscriptions.filter {
-            $0.status.isBillable || (includeCancelledSubscriptions && $0.status == .cancelled)
+            (currencyCode == nil || $0.currencyCode == currencyCode)
+                && ($0.status.isBillable || (includeCancelledSubscriptions && $0.status == .cancelled))
         }
         let monthlySubscriptions = recurringSubscriptions.reduce(Decimal.zero) {
             $0 + FinancialCalculator.subscriptionMonthlyEquivalent(
@@ -379,7 +386,7 @@ public enum FinancialCalculator {
                     kind: .subscriptionCost,
                     severity: .info,
                     title: "Recurring subscriptions",
-                    detail: "Recurring subscriptions total about \(decimalString(monthlySubscriptions)) per month.",
+                    detail: "Recurring subscriptions total about \(money(monthlySubscriptions)) per month.",
                     stableKey: "subscriptions-monthly"
                 )
             )
@@ -391,7 +398,7 @@ public enum FinancialCalculator {
                     kind: .refundActivity,
                     severity: .info,
                     title: "Refunds received",
-                    detail: "Refunds reduced this month's spending by \(decimalString(summary.refunds)).",
+                    detail: "Refunds reduced this month's spending by \(money(summary.refunds)).",
                     stableKey: "refunds-\(monthKey(summary.monthStart, calendar: calendar))"
                 )
             )
@@ -403,7 +410,7 @@ public enum FinancialCalculator {
                     kind: .negativeCashFlow,
                     severity: .warning,
                     title: "Negative cash flow",
-                    detail: "Expenses exceeded income by \(decimalString(absolute(summary.netCashFlow))).",
+                    detail: "Expenses exceeded income by \(money(absolute(summary.netCashFlow))).",
                     stableKey: "cash-flow-negative-\(monthKey(summary.monthStart, calendar: calendar))"
                 )
             )
@@ -413,7 +420,7 @@ public enum FinancialCalculator {
                     kind: .positiveCashFlow,
                     severity: .info,
                     title: "Positive cash flow",
-                    detail: "Income exceeded expenses by \(decimalString(summary.netCashFlow)).",
+                    detail: "Income exceeded expenses by \(money(summary.netCashFlow)).",
                     stableKey: "cash-flow-positive-\(monthKey(summary.monthStart, calendar: calendar))"
                 )
             )
@@ -488,7 +495,15 @@ public enum FinancialCalculator {
     }
 
     private nonisolated static func decimalString(_ value: Decimal) -> String {
-        NSDecimalNumber(decimal: value).stringValue
+        // Insights run rarely, so building a formatter here is acceptable. The
+        // device locale decides grouping (INR gets lakh/crore, US gets commas).
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.locale = .current
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
+        formatter.usesGroupingSeparator = true
+        return formatter.string(from: NSDecimalNumber(decimal: value)) ?? NSDecimalNumber(decimal: value).stringValue
     }
 
     private nonisolated static func isSameMonth(

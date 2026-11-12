@@ -65,10 +65,10 @@ struct SubscriptionDetailView: View {
             }
         }
         .sheet(isPresented: $showEdit) {
-            SubscriptionFormView(subscription: subscription)
+            SubscriptionFormView(subscription: subscription, locale: appStore.displayLocale)
         }
         .sheet(isPresented: $showChargeForm) {
-            TransactionFormView(subscriptionToRecord: subscription)
+            TransactionFormView(subscriptionToRecord: subscription, locale: appStore.displayLocale)
         }
         .confirmationDialog("Delete this subscription?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {

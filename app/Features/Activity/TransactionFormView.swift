@@ -20,11 +20,11 @@ struct TransactionFormView: View {
     @State private var validationMessage: String?
     @State private var showDeleteConfirmation = false
 
-    init(transaction: Transaction? = nil, subscriptionToRecord: Subscription? = nil) {
+    init(transaction: Transaction? = nil, subscriptionToRecord: Subscription? = nil, locale: Locale = .current) {
         self.transaction = transaction
         self.subscriptionToRecord = subscriptionToRecord
         _kind = State(initialValue: transaction?.kind ?? .expense)
-        _amountText = State(initialValue: transaction.map { NSDecimalNumber(decimal: $0.normalizedAmount).stringValue } ?? subscriptionToRecord.map { NSDecimalNumber(decimal: $0.amount).stringValue } ?? "")
+        _amountText = State(initialValue: transaction.map { AmountParser.editingString($0.normalizedAmount, locale: locale) } ?? subscriptionToRecord.map { AmountParser.editingString($0.amount, locale: locale) } ?? "")
         _merchant = State(initialValue: transaction?.merchant ?? subscriptionToRecord?.merchant ?? subscriptionToRecord?.name ?? "")
         _categoryID = State(initialValue: transaction?.categoryID ?? subscriptionToRecord?.categoryID)
         _date = State(initialValue: transaction?.date ?? Date())
@@ -40,7 +40,7 @@ struct TransactionFormView: View {
     }
 
     private var parsedAmount: Decimal {
-        Decimal(string: amountText.replacingOccurrences(of: ",", with: "")) ?? .zero
+        AmountParser.decimal(from: amountText, locale: appStore.displayLocale) ?? .zero
     }
 
     private var trimmedMerchant: String {
@@ -137,12 +137,11 @@ struct TransactionFormView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .buttonStyle(.glass)
+                        .financialSecondaryButton()
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
-                        .disabled(!isValid)
-                        .buttonStyle(.glassProminent)
+                        .financialPrimaryButton()
                         .fontWeight(.semibold)
                 }
             }
@@ -150,7 +149,10 @@ struct TransactionFormView: View {
                 if newValue == .income || newValue == .transfer {
                     categoryID = nil
                 }
+                validationMessage = nil
             }
+            .onChange(of: amountText) { _, _ in validationMessage = nil }
+            .onChange(of: merchant) { _, _ in validationMessage = nil }
             .confirmationDialog("Delete this transaction?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
                 Button("Delete", role: .destructive) {
                     if let transaction {
@@ -161,7 +163,7 @@ struct TransactionFormView: View {
                 Button("Cancel", role: .cancel) { }
             }
         }
-        .platformSheetFrame(minWidth: 680, idealWidth: 760, minHeight: 620, idealHeight: 760)
+        .platformSheetFrame(minWidth: 680, idealWidth: 760, minHeight: 560, idealHeight: 640)
 #if os(iOS)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)

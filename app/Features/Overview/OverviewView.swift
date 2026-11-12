@@ -77,23 +77,10 @@ struct OverviewView: View {
                 } label: {
                     Label("Add", systemImage: "plus")
                 }
-                .buttonStyle(.glassProminent)
+                .financialPrimaryButton()
                 .accessibilityLabel("Add transaction")
-#if os(macOS)
-                SettingsLink {
-                    Image(systemName: "gearshape")
-                        .accessibilityLabel("Settings")
-                }
-                .buttonStyle(.glass)
-#else
-                Button {
-                    showSettings = true
-                } label: {
-                    Image(systemName: "gearshape")
-                }
-                .buttonStyle(.glass)
-                .accessibilityLabel("Settings")
-#endif
+
+                SettingsToolbarButton(isPresented: $showSettings)
             }
         }
 #if os(iOS)
@@ -102,7 +89,7 @@ struct OverviewView: View {
         }
 #endif
         .sheet(isPresented: $showTransactionForm) {
-            TransactionFormView(transaction: selectedTransaction)
+            TransactionFormView(transaction: selectedTransaction, locale: appStore.displayLocale)
         }
     }
 

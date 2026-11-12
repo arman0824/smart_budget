@@ -5,15 +5,15 @@ struct OnboardingView: View {
     @EnvironmentObject private var appStore: AppStore
 
     @State private var page = 0
-    @State private var currencyCode = "INR"
-    @State private var monthlyAllowance = "40000"
+    @State private var currencyCode = OnboardingView.defaultCurrencyCode
+    @State private var monthlyAllowance = ""
     @State private var incomeTarget = ""
     @State private var savingsGoal = ""
     @State private var useSampleData = false
     @State private var notificationsEnabled = false
     @State private var notificationMessage: String?
 
-    private let currencies = [
+    private static let currencies = [
         ("INR", "Indian rupee"),
         ("USD", "US dollar"),
         ("EUR", "Euro"),
@@ -23,6 +23,13 @@ struct OnboardingView: View {
         ("SGD", "Singapore dollar"),
         ("JPY", "Japanese yen")
     ]
+
+    /// Start from the device currency when it is supported, so onboarding does
+    /// not default a US user to a ₹40,000 allowance.
+    private static var defaultCurrencyCode: String {
+        let deviceCode = Locale.current.currency?.identifier ?? "INR"
+        return currencies.contains { $0.0 == deviceCode } ? deviceCode : "INR"
+    }
 
     var body: some View {
         ZStack {
@@ -38,10 +45,13 @@ struct OnboardingView: View {
                         } label: {
                             Image(systemName: "chevron.left")
                                 .font(.headline)
+                                .foregroundStyle(DesignSystem.Colors.primaryText)
                                 .frame(width: 44, height: 44)
+                                .background(DesignSystem.Colors.surface, in: Circle())
+                                .overlay(Circle().stroke(DesignSystem.Colors.divider, lineWidth: 1))
                         }
                         .accessibilityLabel("Back")
-                        .buttonStyle(.glass)
+                        .buttonStyle(.plain)
                     } else {
                         Spacer().frame(width: 44)
                     }
@@ -61,17 +71,32 @@ struct OnboardingView: View {
                 ProgressView(value: Double(page + 1), total: 3)
                     .tint(DesignSystem.Colors.success)
                     .padding(.horizontal, DesignSystem.Spacing.xLarge)
+                    .frame(maxWidth: 640)
                     .padding(.top, DesignSystem.Spacing.small)
 
+#if os(iOS)
                 TabView(selection: $page) {
                     welcomePage.tag(0)
                     setupPage.tag(1)
                     remindersPage.tag(2)
                 }
-#if os(iOS)
                 .tabViewStyle(.page(indexDisplayMode: .never))
-#elseif os(macOS)
-                .tabViewStyle(.automatic)
+                .frame(maxWidth: 640)
+                .frame(maxWidth: .infinity)
+#else
+                // A plain `TabView` on macOS reserves an empty tab bar when its
+                // pages have no `tabItem`, which shows up as a grey capsule.
+                // Paging is a touch affordance, so macOS switches pages directly.
+                Group {
+                    switch page {
+                    case 0: welcomePage
+                    case 1: setupPage
+                    default: remindersPage
+                    }
+                }
+                .transition(.opacity)
+                .frame(maxWidth: 640)
+                .frame(maxWidth: .infinity)
 #endif
 
                 Button {
@@ -82,10 +107,11 @@ struct OnboardingView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DesignSystem.Spacing.medium)
                 }
-                .buttonStyle(.glassProminent)
-                .tint(DesignSystem.Colors.success)
+                .financialPrimaryButton()
                 .padding(.horizontal, DesignSystem.Spacing.xLarge)
                 .padding(.bottom, DesignSystem.Spacing.large)
+                .frame(maxWidth: 640)
+                .frame(maxWidth: .infinity)
                 .accessibilityIdentifier("onboarding-continue")
             }
         }
@@ -154,11 +180,12 @@ struct OnboardingView: View {
                     Text("Currency")
                         .font(.headline)
                     Picker("Currency", selection: $currencyCode) {
-                        ForEach(currencies, id: \.0) { currency in
+                        ForEach(Self.currencies, id: \.0) { currency in
                             Text("\(currency.0) · \(currency.1)")
                                 .tag(currency.0)
                         }
                     }
+                    .labelsHidden()
                     .pickerStyle(.menu)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, DesignSystem.Spacing.medium)
@@ -172,7 +199,7 @@ struct OnboardingView: View {
                 }
 
                 VStack(spacing: DesignSystem.Spacing.medium) {
-                    DecimalField(title: "Monthly spending allowance", text: $monthlyAllowance, prompt: "e.g. 40000")
+                    DecimalField(title: "Monthly spending allowance", text: $monthlyAllowance, prompt: "e.g. \(AmountParser.placeholder())")
                     DecimalField(title: "Monthly income target", text: $incomeTarget, prompt: "Optional")
                     DecimalField(title: "Monthly savings goal", text: $savingsGoal, prompt: "Optional")
                 }
@@ -270,10 +297,7 @@ struct OnboardingView: View {
     }
 
     private func decimalValue(_ text: String) -> Decimal {
-        let normalized = text
-            .replacingOccurrences(of: ",", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return Decimal(string: normalized) ?? .zero
+        AmountParser.decimal(from: text, locale: appStore.locale(for: currencyCode)) ?? .zero
     }
 }
 

@@ -13,6 +13,7 @@ struct ActivityView: View {
     @State private var showFilters = false
     @State private var showTransactionForm = false
     @State private var selectedTransaction: Transaction?
+    @State private var showSettings = false
 
     private var selectedMonth: Date { appStore.selectedMonth }
 
@@ -73,12 +74,89 @@ struct ActivityView: View {
     }
 
     var body: some View {
-        PageScaffold {
-            pageHeader
-            summarySurface
-            filterBar
-            transactionContent
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: DesignSystem.Layout.sectionSpacing) {
+                    pageHeader
+                    summarySurface
+                    filterBar
+                }
+                .padding(.top, DesignSystem.Layout.pageTopPadding)
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            }
+
+            if filteredTransactions.isEmpty {
+                Section {
+                    EmptyStateView(
+                        systemImage: searchText.isEmpty ? "list.bullet.rectangle" : "magnifyingglass",
+                        title: searchText.isEmpty ? "No transactions this month" : "No matching transactions",
+                        message: searchText.isEmpty ? "Add an expense or income entry to start building your activity history." : "Try a different merchant, category, or month.",
+                        actionTitle: searchText.isEmpty ? "Add transaction" : nil,
+                        action: searchText.isEmpty ? {
+                            selectedTransaction = nil
+                            showTransactionForm = true
+                        } : nil
+                    )
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                }
+            } else {
+                ForEach(groupedTransactions, id: \.0) { date, dayTransactions in
+                    Section {
+                        ForEach(dayTransactions, id: \.id) { transaction in
+                            Button {
+                                selectedTransaction = transaction
+                                showTransactionForm = true
+                            } label: {
+                                TransactionRow(
+                                    transaction: transaction,
+                                    category: transaction.categoryID.flatMap { categoryByID[$0] },
+                                    currencyCode: currencyCode
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .contentShape(Rectangle())
+                            .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
+                            .listRowBackground(DesignSystem.Colors.surface)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    appStore.deleteTransaction(transaction)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                            .contextMenu {
+                                Button {
+                                    selectedTransaction = transaction
+                                    showTransactionForm = true
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                Button(role: .destructive) {
+                                    appStore.deleteTransaction(transaction)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        }
+                    } header: {
+                        Text(dayLabel(for: date))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(DesignSystem.Colors.secondaryText)
+                            .textCase(nil)
+                            .listRowInsets(EdgeInsets(top: 14, leading: 0, bottom: 6, trailing: 0))
+                    }
+                }
+            }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .contentMargins(.horizontal, DesignSystem.Layout.pageHorizontalPadding, for: .scrollContent)
+        .contentMargins(.vertical, DesignSystem.Layout.pageTopPadding, for: .scrollContent)
+        .background(DesignSystem.Colors.canvas.ignoresSafeArea())
         .navigationTitle("Activity")
         .platformLargeNavigationTitle()
 #if os(iOS)
@@ -87,20 +165,27 @@ struct ActivityView: View {
         .searchable(text: $searchText, prompt: "Search transactions")
 #endif
         .toolbar {
-            ToolbarItem(placement: .platformTrailing) {
+            ToolbarItemGroup(placement: .platformTrailing) {
                 Button {
                     selectedTransaction = nil
                     showTransactionForm = true
                 } label: {
                     Label("Add", systemImage: "plus")
                 }
-                .buttonStyle(.glassProminent)
+                .financialPrimaryButton()
                 .accessibilityLabel("Add transaction")
+
+                SettingsToolbarButton(isPresented: $showSettings)
             }
         }
         .sheet(isPresented: $showTransactionForm) {
-            TransactionFormView(transaction: selectedTransaction)
+            TransactionFormView(transaction: selectedTransaction, locale: appStore.displayLocale)
         }
+#if os(iOS)
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+        }
+#endif
     }
 
     private var pageHeader: some View {
@@ -166,58 +251,6 @@ struct ActivityView: View {
                 categories: visibleCategories,
                 selection: $categoryFilter
             )
-        }
-    }
-
-    @ViewBuilder
-    private var transactionContent: some View {
-        if filteredTransactions.isEmpty {
-            EmptyStateView(
-                systemImage: searchText.isEmpty ? "list.bullet.rectangle" : "magnifyingglass",
-                title: searchText.isEmpty ? "No transactions this month" : "No matching transactions",
-                message: searchText.isEmpty ? "Add an expense or income entry to start building your activity history." : "Try a different merchant, category, or month.",
-                actionTitle: searchText.isEmpty ? "Add transaction" : nil,
-                action: searchText.isEmpty ? {
-                    selectedTransaction = nil
-                    showTransactionForm = true
-                } : nil
-            )
-            .frame(maxWidth: .infinity)
-        } else {
-            ForEach(groupedTransactions, id: \.0) { date, dayTransactions in
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(dayLabel(for: date))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(DesignSystem.Colors.secondaryText)
-                        .padding(.bottom, DesignSystem.Spacing.xxxSmall)
-
-                    FinancialSurface(padding: EdgeInsets(top: 4, leading: DesignSystem.Spacing.medium, bottom: 4, trailing: DesignSystem.Spacing.medium)) {
-                        ForEach(dayTransactions, id: \.id) { transaction in
-                            Button {
-                                selectedTransaction = transaction
-                                showTransactionForm = true
-                            } label: {
-                                TransactionRow(
-                                    transaction: transaction,
-                                    category: transaction.categoryID.flatMap { categoryByID[$0] },
-                                    currencyCode: currencyCode
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) {
-                                    appStore.deleteTransaction(transaction)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                            if transaction.id != dayTransactions.last?.id {
-                                Divider().overlay(DesignSystem.Colors.divider)
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 

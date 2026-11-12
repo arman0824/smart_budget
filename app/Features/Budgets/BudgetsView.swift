@@ -10,6 +10,7 @@ struct BudgetsView: View {
     @State private var showPlanEditor = false
     @State private var selectedCategory: BudgetCategory?
     @State private var showCategoryPicker = false
+    @State private var showSettings = false
 
     private var selectedMonth: Date { appStore.selectedMonth }
     private var currencyCode: String { appStore.preferences?.currencyCode ?? "INR" }
@@ -46,7 +47,7 @@ struct BudgetsView: View {
         .navigationTitle("Budgets")
         .platformLargeNavigationTitle()
         .toolbar {
-            ToolbarItem(placement: .platformTrailing) {
+            ToolbarItemGroup(placement: .platformTrailing) {
                 Menu {
                     Button {
                         showPlanEditor = true
@@ -61,8 +62,10 @@ struct BudgetsView: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
-                .buttonStyle(.glass)
+                .financialSecondaryButton()
                 .accessibilityLabel("Budget actions")
+
+                SettingsToolbarButton(isPresented: $showSettings)
             }
         }
         .sheet(isPresented: $showPlanEditor) {
@@ -79,10 +82,15 @@ struct BudgetsView: View {
         .sheet(item: $selectedCategory) { category in
             CategoryBudgetEditorView(category: category, month: selectedMonth, existingPlan: plan(for: category))
         }
+#if os(iOS)
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+        }
+#endif
     }
 
     private var pageHeader: some View {
-        PageHeader("Give every rupee a role", title: "Your monthly plan") {
+        PageHeader("Give every amount a role", title: "Your monthly plan") {
             MonthSelector(month: $appStore.selectedMonth, calendar: appStore.calendar)
         }
     }
@@ -228,10 +236,11 @@ private struct MonthlyPlanEditorView: View {
                     AmountInputRow(title: "Income target", text: $incomeText, currencyCode: currencyCode, optional: true)
                     AmountInputRow(title: "Savings goal", text: $savingsText, currencyCode: currencyCode, optional: true)
                 } header: {
-                    Text(month, format: .dateTime.month(.wide).year())
+                    Text("Recurring monthly baseline")
                 } footer: {
-                    Text("The allowance is the amount you plan to spend. Income and savings are reference goals and are never mixed into spending totals.")
+                    Text("These targets apply to every month, including \(month.formatted(.dateTime.month(.wide).year())). The allowance is the amount you plan to spend. Income and savings are reference goals and are never mixed into spending totals.")
                 }
+                .financialFormSection()
             }
             .financialFormSurface()
             .navigationTitle("Monthly plan")
@@ -239,13 +248,13 @@ private struct MonthlyPlanEditorView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .buttonStyle(.glass)
+                        .financialSecondaryButton()
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         save()
                     }
-                    .buttonStyle(.glassProminent)
+                    .financialPrimaryButton()
                     .fontWeight(.semibold)
                 }
             }
@@ -273,12 +282,11 @@ private struct MonthlyPlanEditorView: View {
     }
 
     private func decimalValue(_ text: String) -> Decimal {
-        Decimal(string: text.replacingOccurrences(of: ",", with: "")) ?? .zero
+        AmountParser.decimal(from: text, locale: appStore.displayLocale) ?? .zero
     }
 
     private func stringValue(_ value: Decimal) -> String {
-        let number = NSDecimalNumber(decimal: value)
-        return number == .zero ? "" : number.stringValue
+        value == .zero ? "" : AmountParser.editingString(value, locale: appStore.displayLocale)
     }
 }
 
@@ -310,6 +318,7 @@ private struct CategoryBudgetEditorView: View {
                 } footer: {
                     Text("A zero limit is treated as no limit. Spending still appears in the category overview.")
                 }
+                .financialFormSection()
 
                 if existingPlan != nil {
                     Section {
@@ -317,6 +326,7 @@ private struct CategoryBudgetEditorView: View {
                             showDeleteConfirmation = true
                         }
                     }
+                    .financialFormSection()
                 }
             }
             .financialFormSurface()
@@ -325,11 +335,11 @@ private struct CategoryBudgetEditorView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .buttonStyle(.glass)
+                        .financialSecondaryButton()
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
-                        .buttonStyle(.glassProminent)
+                        .financialPrimaryButton()
                         .fontWeight(.semibold)
                 }
             }
@@ -350,7 +360,7 @@ private struct CategoryBudgetEditorView: View {
 #endif
         .onAppear {
             if let existingPlan {
-                limitText = NSDecimalNumber(decimal: existingPlan.limit).stringValue
+                limitText = AmountParser.editingString(existingPlan.limit, locale: appStore.displayLocale)
             }
         }
     }
@@ -361,7 +371,7 @@ private struct CategoryBudgetEditorView: View {
         _ = appStore.upsertBudgetPlan(
             for: month,
             categoryID: category.id,
-            limit: Decimal(string: limitText.replacingOccurrences(of: ",", with: "")) ?? .zero
+            limit: AmountParser.decimal(from: limitText, locale: appStore.displayLocale) ?? .zero
         )
         dismiss()
     }

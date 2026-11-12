@@ -20,6 +20,9 @@ final class AppStore: ObservableObject {
     @Published var selectedMonth: Date
     @Published var selectedTab: AppTab = .overview
     @Published var lastError: String?
+    /// Published so currency, locale, allowance, and reminder changes refresh
+    /// every view and `MoneyText` immediately.
+    @Published private(set) var preferences: AppPreferences?
 
     init(
         modelContext: ModelContext,
@@ -36,10 +39,24 @@ final class AppStore: ObservableObject {
         } catch {
             lastError = "Your local data could not be prepared. Please try again."
         }
+
+        preferences = (try? modelContext.fetch(FetchDescriptor<AppPreferences>()))?.first
     }
 
-    var preferences: AppPreferences? {
-        (try? modelContext.fetch(FetchDescriptor<AppPreferences>()))?.first
+    /// Locale used for amount entry and display. Derived from the selected
+    /// currency so `1.234,56` and `1,234.56` are both understood correctly.
+    var displayLocale: Locale {
+        guard let preferences, !preferences.localeIdentifier.isEmpty else { return .current }
+        return Locale(identifier: preferences.localeIdentifier)
+    }
+
+    /// Re-reads the preferences row and publishes it. Called after every save
+    /// that can touch preferences so dependent views stay in sync.
+    private func refreshPreferences() {
+        guard let current = (try? modelContext.fetch(FetchDescriptor<AppPreferences>()))?.first else { return }
+        // Assign unconditionally: @Published notifies even when the reference is
+        // unchanged, which is what refreshes views after in-place mutations.
+        preferences = current
     }
 
     var categories: [BudgetCategory] {
@@ -64,6 +81,7 @@ final class AppStore: ObservableObject {
     func save() -> Bool {
         do {
             try modelContext.save()
+            refreshPreferences()
             return true
         } catch {
             lastError = "We couldn't save that change. Your existing data is still safe."
@@ -144,13 +162,33 @@ final class AppStore: ObservableObject {
             preferences.hasSampleData = true
         }
 
+        let wantsReminders = preferences.notificationsEnabled
         _ = save()
+
+        if wantsReminders {
+            scheduleAllReminders()
+        } else {
+            notificationService.cancelReminders(for: fetchSubscriptions())
+        }
     }
 
     func makePreferences() -> AppPreferences {
         let newPreferences = AppPreferences()
         modelContext.insert(newPreferences)
+        preferences = newPreferences
         return newPreferences
+    }
+
+    /// Case-insensitive duplicate check used by the category editor. Duplicate
+    /// names would otherwise crash sample-data seeding and confuse pickers.
+    func categoryNameExists(_ name: String, excluding categoryID: UUID? = nil) -> Bool {
+        let normalized = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !normalized.isEmpty else { return false }
+        let all = (try? modelContext.fetch(FetchDescriptor<BudgetCategory>())) ?? []
+        return all.contains { category in
+            if let categoryID, category.id == categoryID { return false }
+            return category.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalized
+        }
     }
 
     func updateCurrency(_ currencyCode: String) {
@@ -291,28 +329,43 @@ final class AppStore: ObservableObject {
         guard !fetchTransactions().contains(where: \.isSampleData) else { return }
 
         let availableCategories = categories
-        let categoryIDs = Dictionary(uniqueKeysWithValues: availableCategories.map { ($0.name, $0.id) })
+        let categoryIDs = Dictionary(
+            availableCategories.map { ($0.name, $0.id) },
+            uniquingKeysWith: { first, _ in first }
+        )
         let today = Date()
         let weekAgo = calendar.date(byAdding: .day, value: -7, to: today) ?? today
         let twoWeeksAgo = calendar.date(byAdding: .day, value: -14, to: today) ?? today
         let lastMonth = calendar.date(byAdding: .month, value: -1, to: today) ?? today
 
+        // Sample amounts are written for INR. Scale them into the currency the
+        // user chose during onboarding so a US or European user does not see a
+        // $60,000 salary alongside $180 rent.
+        let currencyCode = preferences?.currencyCode ?? "INR"
+        let scale: Decimal
+        switch currencyCode.uppercased() {
+        case "JPY": scale = 2
+        case "INR": scale = 1
+        default: scale = Decimal(0.025)
+        }
+        func sampleAmount(_ value: Decimal) -> Decimal { value * scale }
+
         let sampleTransactions = [
-            Transaction(date: twoWeeksAgo, amount: Decimal(7200), merchant: "Apartment rent", note: "Monthly home payment", categoryID: categoryIDs["Housing"], kind: .expense, isSampleData: true),
-            Transaction(date: weekAgo, amount: Decimal(1850), merchant: "Fresh Market", note: "Weekly groceries", categoryID: categoryIDs["Groceries"], kind: .expense, isSampleData: true),
-            Transaction(date: calendar.date(byAdding: .day, value: -3, to: today) ?? today, amount: Decimal(920), merchant: "The Green Table", note: "Dinner with friends", categoryID: categoryIDs["Dining"], kind: .expense, isSampleData: true),
-            Transaction(date: calendar.date(byAdding: .day, value: -4, to: today) ?? today, amount: Decimal(60000), merchant: "Salary", note: "Monthly income", categoryID: nil, kind: .income, isSampleData: true),
-            Transaction(date: calendar.date(byAdding: .day, value: -1, to: today) ?? today, amount: Decimal(680), merchant: "Metro card", note: "Commute", categoryID: categoryIDs["Transport"], kind: .expense, isSampleData: true),
-            Transaction(date: lastMonth, amount: Decimal(1200), merchant: "Fresh Market", note: "Last month's groceries", categoryID: categoryIDs["Groceries"], kind: .expense, isSampleData: true)
+            Transaction(date: twoWeeksAgo, amount: sampleAmount(Decimal(7200)), merchant: "Apartment rent", note: "Monthly home payment", categoryID: categoryIDs["Housing"], kind: .expense, isSampleData: true),
+            Transaction(date: weekAgo, amount: sampleAmount(Decimal(1850)), merchant: "Fresh Market", note: "Weekly groceries", categoryID: categoryIDs["Groceries"], kind: .expense, isSampleData: true),
+            Transaction(date: calendar.date(byAdding: .day, value: -3, to: today) ?? today, amount: sampleAmount(Decimal(920)), merchant: "The Green Table", note: "Dinner with friends", categoryID: categoryIDs["Dining"], kind: .expense, isSampleData: true),
+            Transaction(date: calendar.date(byAdding: .day, value: -4, to: today) ?? today, amount: sampleAmount(Decimal(60000)), merchant: "Salary", note: "Monthly income", categoryID: nil, kind: .income, isSampleData: true),
+            Transaction(date: calendar.date(byAdding: .day, value: -1, to: today) ?? today, amount: sampleAmount(Decimal(680)), merchant: "Metro card", note: "Commute", categoryID: categoryIDs["Transport"], kind: .expense, isSampleData: true),
+            Transaction(date: lastMonth, amount: sampleAmount(Decimal(1200)), merchant: "Fresh Market", note: "Last month's groceries", categoryID: categoryIDs["Groceries"], kind: .expense, isSampleData: true)
         ]
         sampleTransactions.forEach(modelContext.insert)
 
         let upcomingWeek = calendar.date(byAdding: .day, value: 7, to: today)
         let upcomingMonth = calendar.date(byAdding: .day, value: 18, to: today)
         let subscriptions = [
-            Subscription(name: "Streamline", merchant: "Streamline", amount: Decimal(899), currencyCode: "INR", billingCycle: .monthly, nextBillingDate: upcomingWeek, categoryID: categoryIDs["Entertainment"], status: .active, reminderDaysBefore: 3, notes: "Family plan", isSampleData: true),
-            Subscription(name: "CloudBox", merchant: "CloudBox", amount: Decimal(4999), currencyCode: "INR", billingCycle: .yearly, nextBillingDate: upcomingMonth, categoryID: categoryIDs["Bills & utilities"], status: .active, reminderDaysBefore: 7, notes: "Annual storage renewal", isSampleData: true),
-            Subscription(name: "Focus Pro", merchant: "Focus Pro", amount: Decimal(599), currencyCode: "INR", billingCycle: .monthly, nextBillingDate: upcomingMonth, categoryID: categoryIDs["Education"], status: .trial, trialEndDate: upcomingMonth, reminderDaysBefore: 3, notes: "Trial ends soon", isSampleData: true)
+            Subscription(name: "Streamline", merchant: "Streamline", amount: sampleAmount(Decimal(899)), currencyCode: currencyCode, billingCycle: .monthly, nextBillingDate: upcomingWeek, categoryID: categoryIDs["Entertainment"], status: .active, reminderDaysBefore: 3, notes: "Family plan", isSampleData: true),
+            Subscription(name: "CloudBox", merchant: "CloudBox", amount: sampleAmount(Decimal(4999)), currencyCode: currencyCode, billingCycle: .yearly, nextBillingDate: upcomingMonth, categoryID: categoryIDs["Bills & utilities"], status: .active, reminderDaysBefore: 7, notes: "Annual storage renewal", isSampleData: true),
+            Subscription(name: "Focus Pro", merchant: "Focus Pro", amount: sampleAmount(Decimal(599)), currencyCode: currencyCode, billingCycle: .monthly, nextBillingDate: upcomingMonth, categoryID: categoryIDs["Education"], status: .trial, trialEndDate: upcomingMonth, reminderDaysBefore: 3, notes: "Trial ends soon", isSampleData: true)
         ]
         subscriptions.forEach(modelContext.insert)
 
@@ -325,7 +378,7 @@ final class AppStore: ObservableObject {
         ]
         for (name, limit) in planValues {
             if let categoryID = categoryIDs[name] {
-                modelContext.insert(BudgetPlan(monthStart: monthStart(for: today), categoryID: categoryID, limit: limit, isSampleData: true))
+                modelContext.insert(BudgetPlan(monthStart: monthStart(for: today), categoryID: categoryID, limit: sampleAmount(limit), isSampleData: true))
             }
         }
 

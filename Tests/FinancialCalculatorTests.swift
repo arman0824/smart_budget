@@ -150,4 +150,92 @@ final class FinancialCalculatorTests: XCTestCase {
         XCTAssertNil(store.recordTransaction(amount: Decimal(10), merchant: "   "))
         XCTAssertEqual(try container.mainContext.fetch(FetchDescriptor<Transaction>()).count, 1)
     }
+
+    func testAmountParserUnderstandsGroupingAndDecimalSeparators() {
+        XCTAssertEqual(
+            AmountParser.decimal(from: "1.234,56", locale: Locale(identifier: "de_DE")),
+            Decimal(string: "1234.56")
+        )
+        XCTAssertEqual(
+            AmountParser.decimal(from: "1,234.56", locale: Locale(identifier: "en_US")),
+            Decimal(string: "1234.56")
+        )
+        XCTAssertEqual(
+            AmountParser.decimal(from: "1 234,56", locale: Locale(identifier: "fr_FR")),
+            Decimal(string: "1234.56")
+        )
+        XCTAssertEqual(
+            AmountParser.decimal(from: "₹1,23,456.50", locale: Locale(identifier: "en_IN")),
+            Decimal(string: "123456.50")
+        )
+        XCTAssertEqual(
+            AmountParser.decimal(from: "1,234", locale: Locale(identifier: "en_US")),
+            Decimal(1234)
+        )
+        XCTAssertEqual(
+            AmountParser.decimal(from: "12,5", locale: Locale(identifier: "de_DE")),
+            Decimal(string: "12.5")
+        )
+        XCTAssertNil(AmountParser.decimal(from: "not a number"))
+        XCTAssertNil(AmountParser.decimal(from: "   "))
+    }
+
+    func testEditingStringRoundTripsThroughTheParser() {
+        for identifier in ["en_US", "de_DE", "en_IN", "fr_FR"] {
+            let locale = Locale(identifier: identifier)
+            for amount in [Decimal(42), Decimal(string: "1250.5")!, Decimal(string: "1234.56")!, Decimal(string: "12.345")!] {
+                XCTAssertEqual(
+                    AmountParser.decimal(from: AmountParser.editingString(amount, locale: locale), locale: locale),
+                    amount,
+                    "Round trip failed for \(identifier)"
+                )
+            }
+        }
+    }
+
+    func testSubscriptionInsightExcludesOtherCurrencies() {
+        let usd = Subscription(name: "USD service", amount: Decimal(10), currencyCode: "USD", status: .active)
+        let inr = Subscription(name: "INR service", amount: Decimal(100), currencyCode: "INR", status: .active)
+
+        let insights = FinancialCalculator.deterministicInsights(
+            for: month,
+            transactions: [],
+            subscriptions: [usd, inr],
+            currencyCode: "INR",
+            calendar: calendar
+        )
+
+        let detail = insights.first { $0.kind == .subscriptionCost }?.detail
+        XCTAssertTrue(detail?.contains("100 INR") == true)
+        XCTAssertFalse(detail?.contains("110") == true)
+        XCTAssertFalse(detail?.contains("10 INR") == true)
+    }
+
+    func testDeletedDefaultCategoryIsNotReseeded() throws {
+        let container = try ModelContainerFactory.makeContainer(inMemory: true)
+        let context = container.mainContext
+
+        let categories = try context.fetch(FetchDescriptor<BudgetCategory>())
+        XCTAssertGreaterThan(categories.count, 1)
+        for category in categories.dropFirst() {
+            context.delete(category)
+        }
+        try context.save()
+
+        try ModelContainerFactory.seedDefaults(in: context)
+
+        let remaining = try context.fetch(FetchDescriptor<BudgetCategory>())
+        XCTAssertEqual(remaining.count, 1)
+        XCTAssertEqual(remaining.first?.id, categories.first?.id)
+    }
+
+    func testCurrencyChangePublishesPreferencesAndLocale() throws {
+        let container = try ModelContainerFactory.makeContainer(inMemory: true)
+        let store = AppStore(modelContext: container.mainContext, calendar: calendar)
+
+        store.updateCurrency("USD")
+
+        XCTAssertEqual(store.preferences?.currencyCode, "USD")
+        XCTAssertEqual(store.displayLocale.identifier, "en_US")
+    }
 }

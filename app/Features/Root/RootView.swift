@@ -18,7 +18,6 @@ struct RootView: View {
             }
         }
         .tint(DesignSystem.Colors.success)
-        .preferredColorScheme(.light)
         .alert(
             "Something went wrong",
             isPresented: Binding(
@@ -165,9 +164,10 @@ struct MainTabView: View {
     }
 
     private func sidebarRow(_ tab: AppTab) -> some View {
+        // No fixed foreground colour: the selected row must be allowed to use
+        // the accent's foreground so labels stay legible on the green selection.
         Label(tab.title, systemImage: tab.systemImage)
             .tag(tab)
-            .foregroundStyle(DesignSystem.Colors.primaryText)
             .accessibilityLabel(tab.title)
     }
 

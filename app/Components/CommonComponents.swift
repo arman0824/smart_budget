@@ -109,6 +109,31 @@ extension View {
             .foregroundStyle(DesignSystem.Colors.primaryText)
     }
 
+    /// Applies the themed row colour to a `Section`. This reaches the actual
+    /// rows on macOS, which otherwise keep the system grouped-form grey.
+    func financialFormSection() -> some View {
+        self.listRowBackground(DesignSystem.Colors.surface)
+    }
+
+    /// Neutral toolbar/secondary action. The global tint is the brand green, so
+    /// glass styles would make Cancel and Back look like primary actions.
+    @ViewBuilder
+    func financialSecondaryButton() -> some View {
+#if os(macOS)
+        self.buttonStyle(.bordered)
+#else
+        self.buttonStyle(.borderless)
+#endif
+    }
+
+    /// Primary action with an explicit brand tint instead of relying on the
+    /// inherited app tint.
+    func financialPrimaryButton() -> some View {
+        self
+            .buttonStyle(.glassProminent)
+            .tint(DesignSystem.Colors.success)
+    }
+
     @ViewBuilder
     func platformMultilineField(minHeight: CGFloat = 72) -> some View {
 #if os(macOS)
@@ -498,19 +523,24 @@ struct FinancialSurface<Content: View>: View {
     }
 
     var body: some View {
-        content
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(padding)
-            .background(surfaceColor, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(DesignSystem.Colors.glassOutline, lineWidth: 1)
-            }
-            .shadow(
-                color: style == .flat ? .clear : DesignSystem.Colors.glassShadow,
-                radius: style == .emphasized ? 14 : 8,
-                y: style == .emphasized ? 6 : 3
-            )
+        // Wrap the content in a stack. Without this, passing a `ForEach` as the
+        // content applies padding, background, and shadow to every row, turning
+        // one card into a stack of clipped, gapped cards.
+        VStack(alignment: .leading, spacing: 0) {
+            content
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(padding)
+        .background(surfaceColor, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .stroke(DesignSystem.Colors.glassOutline, lineWidth: 1)
+        }
+        .shadow(
+            color: style == .flat ? .clear : DesignSystem.Colors.glassShadow,
+            radius: style == .emphasized ? 14 : 8,
+            y: style == .emphasized ? 6 : 3
+        )
     }
 
     private var surfaceColor: Color {
@@ -576,10 +606,10 @@ struct EmptyStateView: View {
         VStack(spacing: DesignSystem.Spacing.medium) {
             Image(systemName: systemImage)
                 .font(.system(size: 28, weight: .semibold))
-                .foregroundStyle(DesignSystem.Colors.accent)
+                .foregroundStyle(DesignSystem.Colors.success)
                 .frame(width: DesignSystem.Size.iconLarge, height: DesignSystem.Size.iconLarge)
                 .background(DesignSystem.Colors.successSurface, in: Circle())
-                .overlay(Circle().stroke(DesignSystem.Colors.success.opacity(0.12), lineWidth: 1))
+                .overlay(Circle().stroke(DesignSystem.Colors.success.opacity(0.18), lineWidth: 1))
                 .accessibilityHidden(true)
 
             Text(title)
@@ -598,14 +628,37 @@ struct EmptyStateView: View {
 
             if let actionTitle, let action {
                 Button(actionTitle, action: action)
-                    .buttonStyle(.glassProminent)
-                    .tint(DesignSystem.Colors.accent)
+                    .financialPrimaryButton()
             }
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, DesignSystem.Spacing.large)
         .padding(.vertical, DesignSystem.Spacing.xLarge)
         .accessibilityElement(children: .contain)
+    }
+}
+
+/// One settings entry point for every tab. macOS opens the Settings scene;
+/// iOS presents the same settings view as a sheet.
+struct SettingsToolbarButton: View {
+    @Binding var isPresented: Bool
+
+    var body: some View {
+#if os(macOS)
+        SettingsLink {
+            Image(systemName: "gearshape")
+        }
+        .financialSecondaryButton()
+        .accessibilityLabel("Settings")
+#else
+        Button {
+            isPresented = true
+        } label: {
+            Image(systemName: "gearshape")
+        }
+        .financialSecondaryButton()
+        .accessibilityLabel("Settings")
+#endif
     }
 }
 

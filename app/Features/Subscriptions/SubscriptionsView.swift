@@ -10,6 +10,7 @@ struct SubscriptionsView: View {
     @State private var searchText = ""
     @State private var showForm = false
     @State private var selectedSubscription: Subscription?
+    @State private var showSettings = false
 
     private var currencyCode: String { appStore.preferences?.currencyCode ?? "INR" }
     private var visibleCategories: [BudgetCategory] { categories.filter { !$0.isArchived } }
@@ -98,20 +99,27 @@ struct SubscriptionsView: View {
         .searchable(text: $searchText, prompt: "Search subscriptions")
 #endif
         .toolbar {
-            ToolbarItem(placement: .platformTrailing) {
+            ToolbarItemGroup(placement: .platformTrailing) {
                 Button {
                     selectedSubscription = nil
                     showForm = true
                 } label: {
                     Label("Add", systemImage: "plus")
                 }
-                .buttonStyle(.glassProminent)
+                .financialPrimaryButton()
                 .accessibilityLabel("Add subscription")
+
+                SettingsToolbarButton(isPresented: $showSettings)
             }
         }
         .sheet(isPresented: $showForm) {
-            SubscriptionFormView(subscription: selectedSubscription)
+            SubscriptionFormView(subscription: selectedSubscription, locale: appStore.displayLocale)
         }
+#if os(iOS)
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+        }
+#endif
     }
 
     private var pageHeader: some View {

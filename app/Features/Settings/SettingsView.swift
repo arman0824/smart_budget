@@ -14,6 +14,7 @@ struct SettingsView: View {
     @State private var exportDocument = TransactionCSVDocument()
     @State private var showResetConfirmation = false
     @State private var message: String?
+    @AppStorage(AppearanceMode.storageKey) private var appearanceRaw = AppearanceMode.system.rawValue
 
     private let currencies = [
         ("INR", "Indian rupee"),
@@ -36,9 +37,9 @@ struct SettingsView: View {
 
     private var supportedPlatformText: String {
 #if os(macOS)
-        "iOS 27 and macOS 27"
+        "iOS 26 and macOS 26"
 #else
-        "iOS 27 and later"
+        "iOS 26 and later"
 #endif
     }
 
@@ -58,6 +59,12 @@ struct SettingsView: View {
                         }
                     }
 
+                    Picker("Appearance", selection: $appearanceRaw) {
+                        ForEach(AppearanceMode.allCases) { mode in
+                            Text(mode.title).tag(mode.rawValue)
+                        }
+                    }
+
                     NavigationLink {
                         MonthlyPlanSettingsView()
                     } label: {
@@ -70,6 +77,7 @@ struct SettingsView: View {
                         Label("Categories", systemImage: "square.grid.2x2")
                     }
                 }
+                .financialFormSection()
 
                 Section {
                     Toggle("Renewal reminders", isOn: $notificationsEnabled)
@@ -84,6 +92,7 @@ struct SettingsView: View {
                 } footer: {
                     Text(notificationFooter)
                 }
+                .financialFormSection()
 
                 Section("Data") {
                     Button {
@@ -106,6 +115,7 @@ struct SettingsView: View {
                         .font(.footnote)
                         .foregroundStyle(DesignSystem.Colors.secondaryText)
                 }
+                .financialFormSection()
 
                 Section("Privacy") {
                     Label("Local-first storage", systemImage: "lock.shield")
@@ -113,12 +123,14 @@ struct SettingsView: View {
                         .font(.footnote)
                         .foregroundStyle(DesignSystem.Colors.secondaryText)
                 }
+                .financialFormSection()
 
                 Section("About") {
                     LabeledContent("Version", value: appVersion)
                     LabeledContent("Storage", value: "On-device SwiftData")
                     LabeledContent("Supported", value: supportedPlatformText)
                 }
+                .financialFormSection()
             }
             .financialFormSurface()
             .navigationTitle("Settings")
@@ -127,7 +139,7 @@ struct SettingsView: View {
 #if os(iOS)
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
-                        .buttonStyle(.glass)
+                        .financialSecondaryButton()
                 }
 #endif
             }
@@ -205,6 +217,7 @@ private struct MonthlyPlanSettingsView: View {
             } footer: {
                 Text("These values are stored locally and used by the Overview and Budgets screens. Income does not increase your spending allowance automatically.")
             }
+            .financialFormSection()
         }
         .financialFormSurface()
         .navigationTitle("Monthly plan")
@@ -214,7 +227,7 @@ private struct MonthlyPlanSettingsView: View {
                     save()
                     dismiss()
                 }
-                .buttonStyle(.glassProminent)
+                .financialPrimaryButton()
                 .fontWeight(.semibold)
             }
         }
@@ -236,11 +249,11 @@ private struct MonthlyPlanSettingsView: View {
     private var currencyCode: String { appStore.preferences?.currencyCode ?? "INR" }
 
     private func decimalValue(_ value: String) -> Decimal {
-        Decimal(string: value.replacingOccurrences(of: ",", with: "")) ?? .zero
+        AmountParser.decimal(from: value, locale: appStore.displayLocale) ?? .zero
     }
 
     private func stringValue(_ value: Decimal) -> String {
-        value == .zero ? "" : NSDecimalNumber(decimal: value).stringValue
+        value == .zero ? "" : AmountParser.editingString(value, locale: appStore.displayLocale)
     }
 }
 
@@ -444,6 +457,7 @@ private struct CategoryEditorView: View {
     @State private var name: String
     @State private var iconName: String
     @State private var colorHex: String
+    @State private var validationMessage: String?
 
     private let iconChoices = ["tag.fill", "house.fill", "fork.knife", "cart.fill", "car.fill", "bolt.fill", "bag.fill", "play.rectangle.fill", "heart.fill", "book.fill", "airplane", "sparkles", "ellipsis.circle.fill"]
     private let colorChoices = ["#258563", "#6487CE", "#D5A04A", "#D96A6A", "#7C3AED", "#0891B2", "#DB2777", "#64748B"]
@@ -458,7 +472,7 @@ private struct CategoryEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Category") {
+                Section {
                     TextField("Name", text: $name)
                         .platformWordsAutocapitalization()
                     Picker("Icon", selection: $iconName) {
@@ -475,7 +489,16 @@ private struct CategoryEditorView: View {
                             .tag(color)
                         }
                     }
+                } header: {
+                    Text("Category")
+                } footer: {
+                    if let validationMessage {
+                        Text(validationMessage)
+                            .foregroundStyle(DesignSystem.Colors.danger)
+                    }
                 }
+                .financialFormSection()
+
                 Section {
                     HStack {
                         CategoryIconView(systemName: iconName, color: Color(hex: colorHex), size: DesignSystem.Size.iconLarge, accessibilityLabel: name.isEmpty ? "Category preview" : name)
@@ -488,6 +511,7 @@ private struct CategoryEditorView: View {
                         }
                     }
                 }
+                .financialFormSection()
             }
             .financialFormSurface()
             .navigationTitle(category == nil ? "New category" : "Edit category")
@@ -495,13 +519,16 @@ private struct CategoryEditorView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .financialSecondaryButton()
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
                         .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .financialPrimaryButton()
                         .fontWeight(.semibold)
                 }
             }
+            .onChange(of: name) { _, _ in validationMessage = nil }
         }
         .platformSheetFrame(minWidth: 560, idealWidth: 640, minHeight: 440, idealHeight: 560)
 #if os(iOS)
@@ -513,6 +540,10 @@ private struct CategoryEditorView: View {
     private func save() {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
+        guard !appStore.categoryNameExists(trimmedName, excluding: category?.id) else {
+            validationMessage = "A category named “\(trimmedName)” already exists."
+            return
+        }
 
         if let category {
             category.name = trimmedName

@@ -33,7 +33,7 @@ struct QuickLogView: View {
     }
 
     private var parsedAmount: Decimal {
-        Decimal(string: amountText.replacingOccurrences(of: ",", with: "")) ?? .zero
+        AmountParser.decimal(from: amountText, locale: appStore.displayLocale) ?? .zero
     }
 
     private var trimmedMerchant: String {
@@ -194,7 +194,6 @@ struct QuickLogView: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(DesignSystem.Colors.success)
-            .disabled(!isValid)
             .keyboardShortcut(.defaultAction)
         }
         .padding(DesignSystem.Spacing.medium)

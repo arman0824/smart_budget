@@ -148,7 +148,8 @@ struct TransactionRow: View {
     private var accessibilitySummary: String {
         let name = transaction.merchant.isEmpty ? transaction.kind.displayName : transaction.merchant
         let direction = transaction.kind == .income || transaction.kind == .refund ? "received" : "spent"
-        return "\(name), \(direction) \(transaction.normalizedAmount), \(transaction.date.formatted(date: .abbreviated, time: .omitted))"
+        let amount = MoneyTextValue.string(transaction.normalizedAmount, currencyCode: currencyCode)
+        return "\(name), \(direction) \(amount), \(transaction.date.formatted(date: .abbreviated, time: .omitted))"
     }
 }
 
@@ -228,7 +229,7 @@ struct UpcomingPaymentRow: View {
 
     private var paymentAccessibilityLabel: String {
         let dateText = subscription.nextBillingDate?.formatted(date: .abbreviated, time: .omitted) ?? "no renewal date"
-        return "\(subscription.name), \(subscription.amount) \(currencyCode), due \(dateText)"
+        return "\(subscription.name), \(MoneyTextValue.string(subscription.amount, currencyCode: currencyCode)), due \(dateText)"
     }
 }
 
@@ -381,39 +382,99 @@ struct InsightCard: View {
 }
 
 enum MoneyTextValue {
-    static func string(_ amount: Decimal, currencyCode: String) -> String {
+    /// Currencies whose smallest unit is the whole unit. `NumberFormatter`
+    /// would otherwise add `.00`, which is incorrect for these codes.
+    private static let zeroFractionCurrencies: Set<String> = [
+        "BIF", "CLP", "DJF", "GNF", "ISK", "JPY", "KMF", "KRW", "PYG",
+        "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF"
+    ]
+
+    private static let cacheLock = NSLock()
+    private static var formatterCache: [String: NumberFormatter] = [:]
+
+    static func locale(for currencyCode: String) -> Locale {
+        switch currencyCode.uppercased() {
+        case "INR": return Locale(identifier: "en_IN")
+        case "USD": return Locale(identifier: "en_US")
+        case "EUR": return Locale(identifier: "de_DE")
+        case "GBP": return Locale(identifier: "en_GB")
+        case "AUD": return Locale(identifier: "en_AU")
+        case "CAD": return Locale(identifier: "en_CA")
+        case "SGD": return Locale(identifier: "en_SG")
+        case "JPY": return Locale(identifier: "ja_JP")
+        default: return Locale.current
+        }
+    }
+
+    private static func fractionDigits(for currencyCode: String) -> Int {
+        zeroFractionCurrencies.contains(currencyCode.uppercased()) ? 0 : 2
+    }
+
+    private static func currencyFormatter(for currencyCode: String) -> NumberFormatter {
+        let code = currencyCode.uppercased()
+        cacheLock.lock()
+        if let cached = formatterCache[code] {
+            cacheLock.unlock()
+            return cached
+        }
+        cacheLock.unlock()
+
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = currencyCode
-        formatter.locale = Locale(identifier: currencyCode == "INR" ? "en_IN" : Locale.current.identifier)
+        formatter.currencyCode = code
+        formatter.locale = locale(for: code)
+        let digits = fractionDigits(for: code)
+        formatter.minimumFractionDigits = digits
+        formatter.maximumFractionDigits = digits
+
+        cacheLock.lock()
+        formatterCache[code] = formatter
+        cacheLock.unlock()
+        return formatter
+    }
+
+    static func string(_ amount: Decimal, currencyCode: String) -> String {
+        let formatter = currencyFormatter(for: currencyCode)
         return formatter.string(from: NSDecimalNumber(decimal: amount)) ?? "\(amount)"
     }
 
     static func compactString(_ amount: Decimal, currencyCode: String) -> String {
         let value = NSDecimalNumber(decimal: amount).doubleValue
         let absoluteValue = abs(value)
-        let locale = Locale(identifier: currencyCode == "INR" ? "en_IN" : Locale.current.identifier)
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = currencyCode
-        formatter.locale = locale
+        let code = currencyCode.uppercased()
+        let formatter = currencyFormatter(for: code)
+        let symbol = formatter.currencySymbol ?? code
+        let locale = formatter.locale ?? .current
 
-        let symbol = formatter.currencySymbol ?? currencyCode
+        // Indian numbering conventions: lakh and crore read better than k/M.
         let scale: Double
         let suffix: String
-
-        if absoluteValue >= 1_000_000 {
+        if code == "INR" {
+            if absoluteValue >= 10_000_000 {
+                scale = 10_000_000
+                suffix = "Cr"
+            } else if absoluteValue >= 100_000 {
+                scale = 100_000
+                suffix = "L"
+            } else {
+                return string(amount, currencyCode: code)
+            }
+        } else if absoluteValue >= 1_000_000 {
             scale = 1_000_000
             suffix = "M"
         } else if absoluteValue >= 1_000 {
             scale = 1_000
             suffix = "k"
         } else {
-            return string(amount, currencyCode: currencyCode)
+            return string(amount, currencyCode: code)
         }
 
         let scaledValue = value / scale
-        let formattedValue = scaledValue.formatted(.number.precision(.fractionLength(0...1)))
+        let formattedValue = scaledValue.formatted(
+            .number
+                .locale(locale)
+                .precision(.fractionLength(0...1))
+        )
         return "\(symbol)\(formattedValue)\(suffix)"
     }
 }
