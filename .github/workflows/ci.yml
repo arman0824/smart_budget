@@ -9,7 +9,9 @@ on:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel superseded runs on pull requests, but always let main-branch runs
+  # finish so a green badge is trustworthy.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   source-check:
