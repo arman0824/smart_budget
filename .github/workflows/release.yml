@@ -19,7 +19,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build and test
         run: make test
 
@@ -29,7 +29,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The app is not signed with an Apple distribution identity on CI, so
       # the macOS result is an unsigned but fully built .app. iOS builds are
